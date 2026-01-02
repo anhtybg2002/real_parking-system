@@ -1,0 +1,113 @@
+
+const commonStyles = {
+  pageGrid: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1.2fr",
+    gap: 24,
+    alignItems: "flex-start",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    fontSize: 13,
+  },
+  label: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    color: "#374151",
+    fontWeight: 500,
+  },
+  input: {
+    padding: "8px 10px",
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    fontSize: 13,
+  },
+  select: {
+    padding: "8px 10px",
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    fontSize: 13,
+    backgroundColor: "#fff",
+  },
+  buttonPrimary: {
+    padding: "8px 12px",
+    borderRadius: 9999,
+    border: "none",
+    background:
+      "linear-gradient(135deg, #4f46e5 0%, #6366f1 40%, #8b5cf6 100%)",
+    color: "#fff",
+    fontWeight: 600,
+    cursor: "pointer",
+    marginTop: 4,
+  },
+  buttonSecondary: {
+    padding: "8px 12px",
+    borderRadius: 9999,
+    border: "1px solid #e5e7eb",
+    backgroundColor: "#fff",
+    color: "#4b5563",
+    fontWeight: 500,
+    cursor: "pointer",
+  },
+  buttonDanger: {
+    padding: "6px 10px",
+    borderRadius: 9999,
+    border: "1px solid #fecaca",
+    backgroundColor: "#fef2f2",
+    color: "#b91c1c",
+    fontWeight: 500,
+    cursor: "pointer",
+    fontSize: 12,
+  },
+  buttonSmall: {
+    padding: "6px 10px",
+    borderRadius: 9999,
+    border: "1px solid #e5e7eb",
+    backgroundColor: "#fff",
+    color: "#4b5563",
+    fontWeight: 500,
+    cursor: "pointer",
+    fontSize: 12,
+  },
+  actionsRow: {
+    display: "flex",
+    gap: 8,
+    marginTop: 4,
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: 13,
+  },
+  th: {
+    textAlign: "left",
+    padding: "8px 10px",
+    borderBottom: "1px solid #e5e7eb",
+    color: "#6b7280",
+    fontWeight: 600,
+  },
+  td: {
+    padding: "8px 10px",
+    borderBottom: "1px solid #f3f4f6",
+    color: "#111827",
+    verticalAlign: "middle",
+  },
+  pill: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "2px 8px",
+    borderRadius: 9999,
+    fontSize: 11,
+    fontWeight: 500,
+  },
+  rowActions: {
+    display: "flex",
+    gap: 6,
+    justifyContent: "flex-end",
+  },
+};
+
+export default commonStyles;
