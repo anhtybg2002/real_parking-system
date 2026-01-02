@@ -15,3 +15,5 @@ build/
 server/.venv/
 client/node_modules/
 .env
+server/.venv/
+.venv/
