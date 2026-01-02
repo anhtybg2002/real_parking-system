@@ -11,3 +11,7 @@ dist/
 build/
 .DS_Store
 .vscode/
+.venv/
+server/.venv/
+client/node_modules/
+.env
