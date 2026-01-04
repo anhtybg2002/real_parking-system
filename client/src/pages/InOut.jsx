@@ -10,6 +10,8 @@ import AlertMessages from "../components/inout/AlertMessages";
 
 import EntryForm from "../components/inout/EntryForm";
 import ExitForm from "../components/inout/ExitForm";
+import VehicleTypeModal from "../components/settings/VehicleTypeModal";
+import useVehicleTypes from "../hooks/useVehicleTypes";
 import { formatTime } from "../components/common/deps";
 
 // URL backend FastAPI
@@ -27,6 +29,8 @@ export default function InOut() {
   const [entryPlate, setEntryPlate] = useState("");
   const [entryVehicleType, setEntryVehicleType] = useState("car");
  const [entryAreaId, setEntryAreaId] = useState(null);
+  const [vtManageOpen, setVtManageOpen] = useState(false);
+  const vehicleTypes = useVehicleTypes();
 
 
   // Exit form
@@ -263,14 +267,9 @@ export default function InOut() {
   ];
 
   const convertVehicleType = (t) => {
-    switch (t) {
-      case "car":
-        return "Ô tô";
-      case "motorbike":
-        return "Xe máy";
-      default:
-        return "Khác";
-    }
+    if (!t) return "—";
+    // vehicleTypes.map provided by hook: { key: label }
+    return vehicleTypes.map[t] || (t === "car" ? "Ô tô" : t === "motorbike" ? "Xe máy" : t);
   };
 
   const tableData = activeLogs.map((log, index) => ({
@@ -358,12 +357,23 @@ export default function InOut() {
             setEntryVehicleType={setEntryVehicleType}
             entryArea={entryAreaId}
             setEntryArea={setEntryAreaId}
+            onOpenManageVehicleTypes={() => setVtManageOpen(true)}
 
             areas={areas}
             inputStyle={inputStyle}
             primaryBtnStyle={primaryBtnStyle}
             scanBtnStyle={secondaryBtnStyle}
             capturedPlateImage={entryCapturedPlateImage}
+          />
+          <VehicleTypeModal
+            open={vtManageOpen}
+            onClose={() => setVtManageOpen(false)}
+            value={vehicleTypes.list}
+            onChange={() => {}}
+            onSave={async () => {
+              await vehicleTypes.reload?.();
+              setVtManageOpen(false);
+            }}
           />
 
           <ExitForm

@@ -478,7 +478,7 @@ export default function ParkingMapEditorPage() {
           cols={cfg.map_cols}
           cellSize={cfg.cell_size}
           zoom={1.6}
-          slots={[]}
+          slots={slots}
           cells={draftMapData.cells}
           selectedId={null}
           onSelect={null}

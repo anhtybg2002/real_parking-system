@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 import { createParkingArea } from "../api/parking";
+import useVehicleTypes from "../hooks/useVehicleTypes";
 
 const clampInt = (v, min, max, fallback) => {
   const n = Number(v);
@@ -12,6 +13,7 @@ const clampInt = (v, min, max, fallback) => {
 export default function ParkingAreaCreatePage() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const vehicleTypes = useVehicleTypes();
 
   const [form, setForm] = useState({
     name: "",
@@ -22,11 +24,15 @@ export default function ParkingAreaCreatePage() {
   });
 
   const canSubmit = useMemo(() => {
-    return String(form.name || "").trim().length > 0 && !saving;
+    return String(form.name || "").trim().length > 0 && !saving && (vehicleTypes.list?.length ?? 0) > 0;
   }, [form.name, saving]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if ((vehicleTypes.list?.length ?? 0) === 0) {
+      alert("Vui lòng cấu hình ít nhất một loại xe (Cài đặt → Loại xe) trước khi tạo bãi.");
+      return;
+    }
     if (!canSubmit) return;
 
     const payload = {

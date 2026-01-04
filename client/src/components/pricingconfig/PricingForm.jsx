@@ -1,4 +1,5 @@
 import React from "react";
+import useVehicleTypes from "../../hooks/useVehicleTypes";
 import Card from "../common/Card";
 import styles from "../../styles/commonStyles";
 
@@ -8,6 +9,8 @@ export default function PricingForm({
   parkingAreaId,
   setParkingAreaId,
   parkingAreas,
+  pricingType,
+  setPricingType,
   // block pricing (xe máy)
   morningPrice,
   setMorningPrice,
@@ -26,6 +29,9 @@ export default function PricingForm({
 }) {
   const isCar = vehicleType === "car";
   const isMotorbike = vehicleType === "motorbike";
+  const vt = useVehicleTypes();
+  const isHourly = pricingType === "hourly";
+  const isBlock = pricingType === "block";
 
   return (
     <Card title="Thêm / chỉnh sửa cấu hình giá">
@@ -38,13 +44,32 @@ export default function PricingForm({
             onChange={(e) => setVehicleType(e.target.value)}
             style={styles.select}
           >
-            <option value="car">Ô tô</option>
-            <option value="motorbike">Xe máy</option>
-            <option value="other">Khác</option>
+            {/** dynamic types from API */}
+            <option value="">-- Chọn loại xe --</option>
+            {vt.list.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
           </select>
           <span style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
-            Ô tô sẽ tính tiền theo giờ, xe máy tính theo ca sáng/đêm. Cả hai đều
-            có thể cấu hình vé tháng.
+            Chọn loại xe. Mặc định ô tô dùng "giá theo giờ", xe máy thường dùng "giá theo ca".
+          </span>
+        </label>
+
+        {/* Kiểu tính tiền */}
+        <label style={styles.label}>
+          Kiểu tính tiền
+          <select
+            value={pricingType}
+            onChange={(e) => setPricingType(e.target.value)}
+            style={styles.select}
+          >
+            <option value="hourly">Giá theo giờ</option>
+            <option value="block">Giá theo ca</option>
+          </select>
+          <span style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
+            Chọn phương thức tính tiền: theo giờ hoặc theo ca (sáng/đêm).
           </span>
         </label>
 
@@ -68,8 +93,8 @@ export default function PricingForm({
           </span>
         </label>
 
-        {/* --- Giá theo ca: chỉ cho xe máy --- */}
-        {isMotorbike && (
+        {/* --- Giá theo ca --- */}
+        {isBlock && (
           <>
             <label style={styles.label}>
               Giá ca sáng (06:00 – 18:00) (VNĐ)
@@ -97,8 +122,8 @@ export default function PricingForm({
           </>
         )}
 
-        {/* --- Giá theo giờ: chỉ cho ô tô --- */}
-        {isCar && (
+        {/* --- Giá theo giờ --- */}
+        {isHourly && (
           <>
             <label style={styles.label}>
               Giá theo giờ ban ngày (VNĐ)

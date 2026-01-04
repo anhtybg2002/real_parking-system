@@ -10,6 +10,7 @@ import MonthlyEmailReminderModal from "../components/settings/MonthlyEmailRemind
 import PrintTemplatesModal from "../components/settings/PrintTemplatesModal";
 import VehicleTypeModal from "../components/settings/VehicleTypeModal";
 import RbacModal from "../components/settings/RbacModal";
+import useVehicleTypes from "../hooks/useVehicleTypes";
 
 import { isValidEmail } from "../components/settings/validators";
 import {
@@ -95,12 +96,8 @@ export default function SettingsHubPage() {
   const previewInFlightRef = useRef(false);
   const pendingPreviewRef = useRef(null);
 
-  // ===== Vehicle types (demo state) =====
-  const [vehicleTypes, setVehicleTypes] = useState([
-    { key: "motorbike", label: "Xe máy", enabled: true },
-    { key: "car", label: "Ô tô", enabled: true },
-    { key: "other", label: "Khác", enabled: true },
-  ]);
+  // ===== Vehicle types =====
+  const vehicleTypes = useVehicleTypes();
 
   const sectionTitle = (t) => (
     <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 8 }}>
@@ -495,11 +492,11 @@ export default function SettingsHubPage() {
       <VehicleTypeModal
         open={activeModal === "vehicleType"}
         onClose={() => setActiveModal(null)}
-        value={vehicleTypes}
-        onChange={setVehicleTypes}
-        onSave={(v) => {
-          setVehicleTypes(v);
-          alert("TODO: save vehicle types");
+        value={vehicleTypes.list}
+        onChange={() => {}}
+        onSave={async () => {
+          // refresh global vehicle types after save
+          await vehicleTypes.reload?.();
           setActiveModal(null);
         }}
       />

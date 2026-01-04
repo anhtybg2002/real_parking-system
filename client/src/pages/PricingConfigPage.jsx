@@ -19,6 +19,7 @@ export default function PricingConfigPage() {
   // form state
   const [vehicleType, setVehicleType] = useState("car");
   const [parkingAreaId, setParkingAreaId] = useState("");
+  const [pricingType, setPricingType] = useState("hourly");
 
   // block pricing (xe máy)
   const [morningPrice, setMorningPrice] = useState("");
@@ -41,6 +42,7 @@ export default function PricingConfigPage() {
     setMonthlyPrice("");
     setHourlyPriceDay("");
     setHourlyPriceNight("");
+    setPricingType("hourly");
     setEditingId(null);
   };
 
@@ -91,6 +93,15 @@ export default function PricingConfigPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Nếu thay đổi loại xe ở form (với form mới, khi không đang edit),
+  // tự set pricingType theo business rule: car -> hourly, motorbike -> block
+  useEffect(() => {
+    if (!editingId) {
+      if (vehicleType === "car") setPricingType("hourly");
+      else if (vehicleType === "motorbike") setPricingType("block");
+    }
+  }, [vehicleType, editingId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setAlert({ type: "", message: "" });
@@ -105,37 +116,28 @@ export default function PricingConfigPage() {
 
     const isCar = vehicleType === "car";
     const isMotorbike = vehicleType === "motorbike";
+    const isHourly = pricingType === "hourly";
+    const isBlock = pricingType === "block";
 
-    // Validate cho xe máy (theo ca)
-    if (isMotorbike) {
+    // Validate theo kiểu tính tiền được chọn
+    if (isBlock) {
       if (morningPrice === "" || Number(morningPrice) < 0) {
-        setAlert({
-          type: "error",
-          message: "Vui lòng nhập giá ca sáng hợp lệ cho xe máy.",
-        });
+        setAlert({ type: "error", message: "Vui lòng nhập giá ca sáng hợp lệ." });
         return;
       }
 
       if (nightPrice === "" || Number(nightPrice) < 0) {
-        setAlert({
-          type: "error",
-          message: "Vui lòng nhập giá ca đêm hợp lệ cho xe máy.",
-        });
+        setAlert({ type: "error", message: "Vui lòng nhập giá ca đêm hợp lệ." });
         return;
       }
     }
 
-    // Validate cho ô tô (theo giờ)
-    if (isCar) {
+    if (isHourly) {
       const hasDay = hourlyPriceDay !== "" && Number(hourlyPriceDay) >= 0;
       const hasNight = hourlyPriceNight !== "" && Number(hourlyPriceNight) >= 0;
 
       if (!hasDay && !hasNight) {
-        setAlert({
-          type: "error",
-          message:
-            "Ô tô phải có ít nhất một trong giá theo giờ ban ngày hoặc ban đêm.",
-        });
+        setAlert({ type: "error", message: "Phải có ít nhất một giá theo giờ (ban ngày hoặc ban đêm)." });
         return;
       }
     }
@@ -153,18 +155,18 @@ export default function PricingConfigPage() {
       const payload = {
         vehicle_type: vehicleType,
         parking_area_id: Number(parkingAreaId),
-        pricing_type: isCar ? "hourly" : isMotorbike ? "block" : "block",
+        pricing_type: pricingType,
 
-        // block pricing (xe máy / other)
-        morning_price: isMotorbike && morningPrice !== "" ? Number(morningPrice) : 0,
-        night_price: isMotorbike && nightPrice !== "" ? Number(nightPrice) : 0,
+        // block pricing
+        morning_price: isBlock && morningPrice !== "" ? Number(morningPrice) : 0,
+        night_price: isBlock && nightPrice !== "" ? Number(nightPrice) : 0,
 
-        // monthly cho cả car & motorbike
+        // monthly
         monthly_price: monthlyPrice !== "" ? Number(monthlyPrice) : null,
 
-        // hourly pricing (ô tô)
-        hourly_price_day: isCar && hourlyPriceDay !== "" ? Number(hourlyPriceDay) : null,
-        hourly_price_night: isCar && hourlyPriceNight !== "" ? Number(hourlyPriceNight) : null,
+        // hourly pricing
+        hourly_price_day: isHourly && hourlyPriceDay !== "" ? Number(hourlyPriceDay) : null,
+        hourly_price_night: isHourly && hourlyPriceNight !== "" ? Number(hourlyPriceNight) : null,
 
         is_active: true,
       };
@@ -191,6 +193,8 @@ export default function PricingConfigPage() {
   const handleEditClick = (rule) => {
     setEditingId(rule.id);
     setVehicleType(rule.vehicle_type || "car");
+
+    setPricingType(rule.pricing_type || (rule.vehicle_type === "car" ? "hourly" : "block"));
 
     setParkingAreaId(
       rule.parking_area_id !== null && rule.parking_area_id !== undefined
@@ -292,6 +296,8 @@ export default function PricingConfigPage() {
         />
 
         <PricingForm
+          pricingType={pricingType}
+          setPricingType={setPricingType}
           vehicleType={vehicleType}
           setVehicleType={setVehicleType}
           parkingAreaId={parkingAreaId}

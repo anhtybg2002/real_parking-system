@@ -1,4 +1,5 @@
 import React from "react";
+import useVehicleTypes from "../../hooks/useVehicleTypes";
 import Card from "../common/Card";
 import styles from "../../styles/commonStyles";
 
@@ -9,6 +10,8 @@ export default function PricingList({
   onEdit,
   onDelete,
 }) {
+  const vt = useVehicleTypes();
+
   return (
     <Card title="Danh sách cấu hình giá">
       {loading ? (
@@ -65,7 +68,9 @@ export default function PricingList({
                           : "#92400e",
                       }}
                     >
-                      {isCar
+                      {vt.map[rule.vehicle_type]
+                        ? vt.map[rule.vehicle_type]
+                        : isCar
                         ? "Ô tô"
                         : isMotorbike
                         ? "Xe máy"

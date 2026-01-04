@@ -2,6 +2,7 @@ import React from "react";
 import commonStyles from "../../styles/commonStyles";
 import Pill from "./Pill";
 import { renderVehicleIcon, renderVehicleType } from "./constants";
+import useVehicleTypes from "../../hooks/useVehicleTypes";
 
 export default function SlotDetailPanel({
   selected,
@@ -29,6 +30,8 @@ export default function SlotDetailPanel({
 
     return `Đang đổi chỗ: đã chọn ${swapFrom.code} (${plate}) • ${type}. Hãy click chỗ thứ 2 trên bản đồ (cùng loại xe) để đổi.`;
   })();
+
+  const vt = useVehicleTypes();
 
   return (
     <div style={card}>
@@ -88,10 +91,10 @@ export default function SlotDetailPanel({
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#111827" }}>
-                {renderVehicleIcon(selected.vehicle_type_allowed)} {selected.code}
+                {(vt.icons?.[selected.vehicle_type_allowed] ?? renderVehicleIcon(selected.vehicle_type_allowed))} {selected.code}
               </div>
               <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-                Area #{selected.parking_area_id} • {renderVehicleType(selected.vehicle_type_allowed)}
+                Area #{selected.parking_area_id} • {vt.map[selected.vehicle_type_allowed] ?? renderVehicleType(selected.vehicle_type_allowed)}
               </div>
             </div>
             <Pill status={selected.status} />

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { STATUS_META, CELL_KIND_META, renderVehicleIcon, renderVehicleType } from "./constants";
+import useVehicleTypes from "../../hooks/useVehicleTypes";
 
 export default function MapGrid({
   rows,
@@ -20,6 +21,8 @@ export default function MapGrid({
     (slots || []).forEach((s) => m.set(`${s.row}-${s.col}`, s));
     return m;
   }, [slots]);
+
+  const vehicleTypes = useVehicleTypes();
 
   const baseCell = {
     width: cell,
@@ -173,11 +176,11 @@ export default function MapGrid({
 
           // 2.2 Slot exists
           const selected = slot.id === selectedId;
-          const icon = renderVehicleIcon(slot.vehicle_type_allowed);
+          const icon = vehicleTypes.icons?.[slot.vehicle_type_allowed] ?? renderVehicleIcon(slot.vehicle_type_allowed);
 
           const tip = [
             `${slot.code} • ${STATUS_META[slot.status]?.label || slot.status}`,
-            `Loại: ${renderVehicleType(slot.vehicle_type_allowed)}`,
+            `Loại: ${vehicleTypes.map[slot.vehicle_type_allowed] ?? renderVehicleType(slot.vehicle_type_allowed)}`,
             slot.current_plate ? `Biển số: ${slot.current_plate}` : null,
           ]
             .filter(Boolean)

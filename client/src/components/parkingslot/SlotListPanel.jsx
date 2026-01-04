@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import useVehicleTypes from "../../hooks/useVehicleTypes";
 import commonStyles from "../../styles/commonStyles";
 import Pill from "./Pill";
 import { renderVehicleIcon, renderVehicleType } from "./constants";
@@ -12,6 +13,7 @@ export default function SlotListPanel({
   onToggleLockInline,
   onReleaseInline,
 }) {
+  const vt = useVehicleTypes();
   const card = { border: "1px solid #e5e7eb", borderRadius: 16, background: "#fff", padding: 16 };
   const headerRow = {
     display: "flex",
@@ -69,10 +71,11 @@ export default function SlotListPanel({
             style={{ ...commonStyles.select, borderRadius: 9999 }}
           >
             <option value="all">Tất cả loại xe</option>
-            <option value="motorbike">Xe máy</option>
-            <option value="car">Ô tô</option>
-            <option value="bicycle">Xe đạp</option>
-            <option value="truck">Xe tải</option>
+            {vt.list.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label}
+              </option>
+            ))}
           </select>
 
           <select
@@ -107,10 +110,10 @@ export default function SlotListPanel({
               {listData.map((s) => (
                 <tr key={s.id}>
                   <td style={{ ...commonStyles.td, fontWeight: 800 }}>
-                    {renderVehicleIcon(s.vehicle_type_allowed)} {s.code}
+                    {(vt.icons?.[s.vehicle_type_allowed] ?? renderVehicleIcon(s.vehicle_type_allowed))} {s.code}
                   </td>
                   <td style={commonStyles.td}>#{s.parking_area_id}</td>
-                  <td style={commonStyles.td}>{renderVehicleType(s.vehicle_type_allowed)}</td>
+                  <td style={commonStyles.td}>{vt.map[s.vehicle_type_allowed] ?? renderVehicleType(s.vehicle_type_allowed)}</td>
                   <td style={commonStyles.td}><Pill status={s.status} /></td>
                   <td style={commonStyles.td}>{s.current_plate || "—"}</td>
                   <td style={commonStyles.td}>r{s.row}, c{s.col}</td>

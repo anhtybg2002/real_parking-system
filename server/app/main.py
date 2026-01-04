@@ -25,7 +25,11 @@ from app import (
     template,
     permission,
     site_info,
+    vehicle_type,
 )
+from apscheduler.schedulers.background import BackgroundScheduler
+from app.monthlyticket.cron import job_wrapper
+from zoneinfo import ZoneInfo
 
 app = FastAPI(title="Parking System API")
 
@@ -199,10 +203,31 @@ def init_permissions():
 # ✅ chạy seed đúng thời điểm startup (đỡ bị chạy lại khi hot reload import)
 @app.on_event("startup")
 def on_startup():
-    init_default_parking_area()
-    init_default_map_and_slots()
+    # NOTE: do not auto-seed a default parking area (S1) — require users to create areas
+    # init_default_parking_area()
+    # init_default_map_and_slots()
     init_admin()
     init_permissions()
+    # start background scheduler for periodic tasks
+    try:
+        scheduler = BackgroundScheduler()
+        # chạy job kiểm tra mỗi phút (để tôn trọng `send_time` do client cấu hình)
+        scheduler.add_job(job_wrapper, "cron", hour=23, minute=0, timezone=ZoneInfo("Asia/Ho_Chi_Minh"))
+        scheduler.start()
+        app.state.scheduler = scheduler
+    except Exception:
+        # ignore scheduler errors at startup
+        pass
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    sched = getattr(app.state, "scheduler", None)
+    if sched:
+        try:
+            sched.shutdown(wait=False)
+        except Exception:
+            pass
 
 
 # -----------------------------
@@ -221,6 +246,7 @@ app.include_router(parking.router)
 app.include_router(template.router)
 app.include_router(permission.router)
 app.include_router(site_info.router)
+app.include_router(vehicle_type.router)
 
 
 @app.get("/health")

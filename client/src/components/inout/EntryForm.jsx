@@ -2,7 +2,7 @@
 
 import React from "react";
 import Card from "../common/Card";
-import { VEHICLE_TYPES } from "../../constants/vehicleTypes";
+import useVehicleTypes from "../../hooks/useVehicleTypes";
 export default function EntryForm({
   onSubmit,
   onScanPlate,
@@ -18,11 +18,14 @@ export default function EntryForm({
   primaryBtnStyle,
   scanBtnStyle,
   capturedPlateImage,
+  onOpenManageVehicleTypes,
 }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit && onSubmit();
   };
+
+  const vt = useVehicleTypes();
 
   return (
     <Card title="Vehicle Entry">
@@ -70,17 +73,36 @@ export default function EntryForm({
           >
             Loại xe
           </label>
-          <select
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <select
             value={entryVehicleType}
             onChange={(e) => setEntryVehicleType(e.target.value)}
             style={{ ...inputStyle, width: "100%" }}
           >
-            {Object.values(VEHICLE_TYPES).map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
-              </option>
-            ))}
-          </select>
+            {vt.list.length
+              ? vt.list.map((v) => (
+                  <option key={v.key} value={v.key}>
+                    {v.label}
+                  </option>
+                ))
+              : [
+                  { key: "car", label: "Ô tô" },
+                  { key: "motorbike", label: "Xe máy" },
+                  { key: "other", label: "Khác" },
+                ].map((v) => (
+                  <option key={v.key} value={v.key}>
+                    {v.label}
+                  </option>
+                ))}
+            </select>
+            <button
+              type="button"
+              style={{ padding: "6px 8px", borderRadius: 8 }}
+              onClick={() => onOpenManageVehicleTypes?.()}
+            >
+              Quản lý
+            </button>
+          </div>
         </div>
 
         {/* Khu vực */}

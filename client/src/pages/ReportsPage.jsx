@@ -4,6 +4,7 @@ import AppLayout from "../components/layout/AppLayout";
 import Card from "../components/common/Card";
 import commonStyles from "../styles/commonStyles";
 import axiosClient from "../api/axiosClient";
+import VehicleTypeSelect from "../components/common/VehicleTypeSelect";
 import { useNavigate } from "react-router-dom";
 
 /* ================= HELPERS ================= */
@@ -325,12 +326,7 @@ export default function ReportsPage() {
 
               <label style={commonStyles.label}>
                 Loại xe
-                <select name="vehicle_type" value={filters.vehicle_type} onChange={handleChange} style={commonStyles.select}>
-                  <option value="all">Tất cả</option>
-                  <option value="motorbike">Xe máy</option>
-                  <option value="car">Ô tô</option>
-                  <option value="other">Khác</option>
-                </select>
+                <VehicleTypeSelect value={filters.vehicle_type} onChange={handleChange} />
               </label>
 
               <label style={commonStyles.label}>

@@ -1,6 +1,7 @@
 
 from datetime import datetime, date, time
 from typing import List, Optional
+import traceback
 from app.auth.deps import get_current_user
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -19,6 +20,8 @@ find_monthly_price_for_ticket,
 find_monthly_price_by_vehicle_and_area, 
 local_date_to_utc_start, 
 local_date_to_utc_end,)
+from app.monthlyticket.schemas import MonthlyEmailReminderConfig
+from app.monthlyticket.config_crud import get_config, upsert_config
 
 from app.permission.guards import require_page
 
@@ -28,6 +31,8 @@ router = APIRouter(
     dependencies=[Depends(require_page("/dashboard/monthly-ticket"))],
 )
 router = APIRouter(prefix="/monthly-tickets", tags=["Monthly Tickets"])
+
+import logging
 
 @router.get("", response_model=List[MonthlyTicketRead])
 def list_monthly_tickets(
@@ -260,6 +265,77 @@ def get_monthly_ticket(ticket_id: int, db: Session = Depends(get_db)):
     if not ticket:
         raise HTTPException(status_code=404, detail="Không tìm thấy vé tháng.")
     return ticket
+
+
+@router.post("/send-test")
+def send_test_email(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Send a test reminder email to provided address using the monthly_expiry_email template."""
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    print(f"[monthlyticket.routes] send_test_email called by user={getattr(current_user, 'id', None)} email={email}")
+
+    # render template with sample data
+    from app.template.crud import ensure_template_exists
+    from app.template.render import render_template
+    
+    from app.site_info.crud import get_site_info
+    from app.monthlyticket.cron import _send_email_smtp
+    tpl = ensure_template_exists(db, "monthly_expiry_email")
+
+    site_info = get_site_info(db)
+    data = {
+        "customer_name": "Khách hàng thử",
+        "license_plate": "TEST-000",
+        "end_date": (date.today()).strftime("%Y-%m-%d"),
+        "days_left": 7,
+        "site_name": site_info.get("site_name", "Hệ thống quản lý đỗ xe"),
+        "site_phone": site_info.get("site_phone", ""),
+    }
+
+    subject = render_template(tpl.subject or "[Test] Vé tháng sắp hết hạn", data) if tpl and tpl.subject else "[Test] Vé tháng sắp hết hạn"
+    body = render_template(tpl.body or "Test email body", data) if tpl else "Test email body"
+
+    try:
+        print(f"[monthlyticket.routes] Sending test email to {email}")
+        _send_email_smtp(subject=subject, body=body, to_email=email)
+        print(f"[monthlyticket.routes] Sent test email to {email}")
+        return {"ok": True, "message": "Sent test email"}
+    except Exception as e:
+        print(f"[monthlyticket.routes] Error sending test email to {email}: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.get("/settings/email-reminder", response_model=MonthlyEmailReminderConfig)
+def get_email_reminder_settings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # require admin
+    if getattr(current_user, "role", "") != "admin":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    cfg = get_config(db)
+    if not cfg:
+        return MonthlyEmailReminderConfig()
+    filtered = {
+        "enabled": cfg.get("enabled", False),
+        "days_before": cfg.get("days_before", [7]) or [7],
+        "send_time": cfg.get("send_time", "23:00"),
+        "test_email": cfg.get("test_email"),
+    }
+    return MonthlyEmailReminderConfig(**filtered)
+
+
+@router.put("/settings/email-reminder", response_model=MonthlyEmailReminderConfig)
+def update_email_reminder_settings(payload: MonthlyEmailReminderConfig, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # require admin
+    if getattr(current_user, "role", "") != "admin":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    # store into separate monthly_ticket_sending_config table
+    upsert_config(db, payload.dict(), updated_by=current_user.id)
+    return payload
 
 
 @router.delete("/{ticket_id}")

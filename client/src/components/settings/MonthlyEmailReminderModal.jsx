@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import ModalShell from "../common/ModalShell";
 import commonStyles from "../../styles/commonStyles";
 import { EMAIL_DAY_PRESETS } from "./constants";
@@ -19,11 +19,42 @@ export default function MonthlyEmailReminderModal({
     days_before: [5, 10],
     send_time: "08:30",
     test_email: "",
-    scope: "all",
-    area: "",
   };
 
   const set = (patch) => onChange?.({ ...v, ...patch });
+  const [saving, setSaving] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const doSave = async (cfg) => {
+    // if (onSave) return onSave(cfg);
+    setSaving(true);
+    try {
+      const { updateEmailReminderSettings } = await import("../../api/monthlyTickets");
+      await updateEmailReminderSettings(cfg);
+      alert("Lưu cấu hình thành công.");
+      onClose?.();
+    } catch (err) {
+      console.error(err);
+      alert("Lưu cấu hình thất bại: " + (err?.response?.data?.detail || err.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const doSendTest = async (email) => {
+    if (onSendTest) return onSendTest(email);
+    setSendingTest(true);
+    try {
+      const { sendTestMonthlyExpiryEmail } = await import("../../api/settingsTemplates");
+      await sendTestMonthlyExpiryEmail(email, {});
+      alert("Đã gửi email thử. Kiểm tra hộp thư (Mailtrap).");
+    } catch (err) {
+      console.error(err);
+      alert("Gửi test thất bại: " + (err?.response?.data?.detail || err.message));
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   return (
     <ModalShell
@@ -43,11 +74,11 @@ export default function MonthlyEmailReminderModal({
               const email = (v.test_email || "").trim();
               if (!email) return alert("Nhập email nhận thử trước đã.");
               if (!isValidEmail(email)) return alert("Email nhận thử không đúng định dạng.");
-              onSendTest?.(email);
+              doSendTest(email);
             }}
             disabled={!v.enabled}
           >
-            Gửi test
+            {sendingTest ? "Đang gửi..." : "Gửi test"}
           </button>
 
           <button
@@ -68,10 +99,10 @@ export default function MonthlyEmailReminderModal({
                   return;
                 }
               }
-              onSave?.(v);
+              doSave(v);
             }}
           >
-            Lưu thay đổi
+            {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </>
       }

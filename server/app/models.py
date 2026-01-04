@@ -425,3 +425,33 @@ class SiteInfo(Base):
     value = Column(JSON, nullable=False)    # chứa toàn bộ thông tin UI
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+
+class MonthlyTicketSendingConfig(Base):
+    __tablename__ = "monthly_ticket_sending_config"
+
+    id = Column(Integer, primary_key=True)
+    # store config as JSON
+    value = Column(JSON, nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+
+class VehicleType(Base):
+    __tablename__ = "vehicle_type"
+
+    id = Column(Integer, primary_key=True)
+    # key: motorbike | car | other | custom
+    key = Column(String(50), nullable=False, index=True)
+    label = Column(String(100), nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True)
+    # optional icons metadata (stored as JSON) - can be a string, object, or null
+    icons = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("key", name="uq_vehicle_type_key"),
+    )

@@ -28,5 +28,6 @@ export function renderTemplate(key, data = {}, overrides = {}) {
 }
 
 export function sendTestMonthlyExpiryEmail(to_email, data = {}) {
-  return axiosClient.post(`${BASE}/monthly_expiry_email/send-test`, { to_email, data });
+  // backend expects { email: string }
+  return axiosClient.post(`/monthly-tickets/send-test`, { email: to_email, data });
 }

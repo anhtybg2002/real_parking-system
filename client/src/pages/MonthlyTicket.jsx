@@ -8,11 +8,7 @@ import styles from "../styles/commonStyles";
 import { formatTime } from "../components/common/deps";
 import ExpiryReminderPanel from "../components/monthlyticket/ExpiryReminderPanel";
 
-const VEHICLE_TYPES = [
-  { label: "Ô tô", value: "car" },
-  { label: "Xe máy", value: "motorbike" },
-  { label: "Khác", value: "other" },
-];
+import useVehicleTypes from "../hooks/useVehicleTypes";
 
 // Dùng chung: trả về CHỈ ngày dd/mm/yyyy
 const formatDateVN = (value) => {
@@ -39,6 +35,7 @@ const isValidEmail = (email) => {
 
 
 export default function MonthlyTicketsPage() {
+  const vehicleTypes = useVehicleTypes();
   const [tickets, setTickets] = useState([]);
   const [search, setSearch] = useState("");
   const [filterStart, setFilterStart] = useState("");
@@ -372,7 +369,7 @@ export default function MonthlyTicketsPage() {
   };
 
   const vehicleLabel = (value) => {
-    const found = VEHICLE_TYPES.find((v) => v.value === value);
+    const found = vehicleTypes.list.find((v) => v.key === value);
     return found ? found.label : value;
   };
 
@@ -437,8 +434,12 @@ export default function MonthlyTicketsPage() {
                   onChange={handleChangeCreate}
                   style={styles.select}
                 >
-                  {VEHICLE_TYPES.map((v) => (
-                    <option key={v.value} value={v.value}>
+                  {(vehicleTypes.list.length ? vehicleTypes.list : [
+                    { key: "car", label: "Ô tô" },
+                    { key: "motorbike", label: "Xe máy" },
+                    { key: "other", label: "Khác" },
+                  ]).map((v) => (
+                    <option key={v.key} value={v.key}>
                       {v.label}
                     </option>
                   ))}

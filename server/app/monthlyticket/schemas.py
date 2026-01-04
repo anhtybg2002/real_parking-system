@@ -43,3 +43,20 @@ class MonthlyTicketRead(MonthlyTicketBase):
 class MonthlyTicketRenewRequest(BaseModel):
     license_plate_number: str
     months: int = 1
+
+
+class MonthlyEmailReminderConfig(BaseModel):
+    enabled: bool = True
+    days_before: list[int] = [7]
+    send_time: str = "23:00"  # HH:MM
+    test_email: Optional[str] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "enabled": True,
+                "days_before": [5, 10],
+                "send_time": "08:30",
+                "test_email": "test@example.com",
+            }
+        }

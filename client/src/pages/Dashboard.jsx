@@ -1,5 +1,6 @@
-// src/pages/DashboardPage.jsx
+ // src/pages/DashboardPage.jsx
 import React, { useEffect, useState } from "react";
+import useVehicleTypes from "../hooks/useVehicleTypes";
 import AppLayout from "../components/layout/AppLayout";
 import VehiclesEnteredChart from "../components/dashboard/VehiclesEnteredChart";
 import Overview from "../components/dashboard/Overview";
@@ -74,16 +75,12 @@ const fetchData = async () => {
 
  
 
+  const { map: vtMap } = useVehicleTypes();
+
   const convertVehicleType = (t) => {
-  switch (t) {
-    case "car":
-      return "Ô tô";
-    case "motorbike":
-      return "Xe máy";
-    default:
-      return "Khác";
-  }
-};
+    if (!t) return "—";
+    return vtMap[t] || (t === "car" ? "Ô tô" : t === "motorbike" ? "Xe máy" : "Khác");
+  };
 
   const tableColumns = [
     { key: "index", label: "#" },
