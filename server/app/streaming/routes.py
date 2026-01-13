@@ -1,4 +1,4 @@
-# app/streaming/routes.py
+
 
 import base64
 import threading
@@ -19,15 +19,13 @@ MODEL_PATH = Path("best.pt")
 
 _model = None
 _reader = None
-_model_lock = threading.Lock()
+_model_lock = threading.Lock() # để tránh trường hợp nhiều request cùng load model lúc đầu
+
 _reader_lock = threading.Lock()
 
 
 def get_model():
-  """
-  Lazy-load YOLO model.
-  Chỉ load lần đầu khi có request cần dùng, tránh làm nặng Application startup.
-  """
+  
   global _model
   if _model is None:
       with _model_lock:
@@ -42,9 +40,7 @@ def get_model():
 
 
 def get_reader():
-  """
-  Lazy-load EasyOCR reader.
-  """
+ 
   global _reader
   if _reader is None:
       with _reader_lock:
@@ -58,14 +54,14 @@ def get_reader():
   return _reader
 
 
-# ============ CAMERA TOÀN CỤC ============
+
 
 cap = None  # đối tượng VideoCapture dùng chung
 cam_lock = threading.Lock()  # lock để tránh 2 thread đọc camera cùng lúc
 
 
 def get_camera():
-    """Mở (hoặc lấy) camera dùng chung."""
+    
     global cap
     if cap is None or not cap.isOpened():
         cap = cv2.VideoCapture(0)
@@ -76,10 +72,7 @@ def get_camera():
     return cap
 
 
-# ============ NHẬN DIỆN BIỂN SỐ ============
 
-import re
-import cv2
 
 def detect_plate_in_frame(frame):
     model = get_model()
@@ -90,10 +83,10 @@ def detect_plate_in_frame(frame):
 
     for r in results:
         for box in r.boxes:
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist()) # Cắt vùng nghi biển số từ ảnh gốc
             plate = frame[y1:y2, x1:x2]
 
-            if plate.size == 0:
+            if plate.size == 0: # bỏ qua nếu vùng cắt rỗng
                 continue
 
             # texts: list các chuỗi OCR (thường theo từng dòng / cụm chữ)
@@ -111,8 +104,7 @@ def detect_plate_in_frame(frame):
 
         # Chuẩn hóa lại khoảng trắng (phòng khi OCR trả nhiều khoảng trắng)
         plate_text = re.sub(r"\s+", " ", raw_text).strip()
-
-        # Nếu vẫn muốn chuẩn hóa về in hoa thì giữ lại dòng này, không ảnh hưởng dấu chấm phẩy:
+        
         plate_text = plate_text.upper()
 
         if plate_text == "":

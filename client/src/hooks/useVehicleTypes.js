@@ -1,43 +1,40 @@
 import { useEffect, useState } from "react";
-import { getVehicleTypes } from "../api/vehicleTypes";
+import { VEHICLE_TYPES } from "../constants/vehicleTypes";
 
 export default function useVehicleTypes() {
   const [list, setList] = useState([]);
   const [map, setMap] = useState({});
   const [icons, setIcons] = useState({});
   const [loading, setLoading] = useState(false);
-  async function load() {
-    try {
-      setLoading(true);
-      const res = await getVehicleTypes();
-      const data = res?.data ?? res ?? [];
-      const arr = Array.isArray(data) ? data : [];
-      setList(arr);
-      const m = {};
-      const mIcons = {};
-      arr.forEach((r) => {
-        m[r.key] = r.label;
-        mIcons[r.key] = r.icons ?? null;
-      });
-      setMap(m);
-      setIcons(mIcons);
-    } catch (e) {
-      console.error(e);
-      setList([]);
-      setMap({});
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
-    let mounted = true;
-    if (!mounted) return;
-    load();
-    return () => {
-      mounted = false;
-    };
+    setLoading(true);
+    const arr = Object.keys(VEHICLE_TYPES).map((key) => {
+      const item = VEHICLE_TYPES[key];
+      return {
+        key,
+        value: item.value,
+        label: item.label,
+        icons: item.icons ?? null,
+        enabled: true,
+      };
+    });
+
+    const m = {};
+    const mIcons = {};
+    arr.forEach((r) => {
+      m[r.key] = r.label;
+      mIcons[r.key] = r.icons ?? null;
+    });
+
+    setList(arr);
+    setMap(m);
+    setIcons(mIcons);
+    setLoading(false);
   }, []);
 
-  return { list, map, icons, loading, reload: load };
+  // reload is a no-op since vehicle types are static constants now
+  const reload = async () => {};
+
+  return { list, map, icons, loading, reload };
 }

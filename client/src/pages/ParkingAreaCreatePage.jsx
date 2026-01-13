@@ -55,7 +55,7 @@ export default function ParkingAreaCreatePage() {
       // navigate("/dashboard/parking-area");
 
       // Option 2 (khuyến nghị): chuyển thẳng sang editor để set map
-      if (areaId) navigate(`/dashboard/parking-area/editor?areaId=${areaId}`);
+      if (areaId) navigate(`/dashboard/settings/parking-area/editor?areaId=${areaId}`);
       else navigate("/dashboard/parking-area");
     } catch (err) {
       console.error("createParkingArea error:", err);

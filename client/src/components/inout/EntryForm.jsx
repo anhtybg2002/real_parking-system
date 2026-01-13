@@ -18,7 +18,6 @@ export default function EntryForm({
   primaryBtnStyle,
   scanBtnStyle,
   capturedPlateImage,
-  onOpenManageVehicleTypes,
 }) {
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,8 +27,8 @@ export default function EntryForm({
   const vt = useVehicleTypes();
 
   return (
-    <Card title="Vehicle Entry">
-      <form onSubmit={handleSubmit}>
+    <Card title="Ghi nhận xe vào">
+      <form onSubmit={handleSubmit}> 
         {/* Biển số xe */}
         <div style={{ marginBottom: 8 }}>
           <label
@@ -95,13 +94,6 @@ export default function EntryForm({
                   </option>
                 ))}
             </select>
-            <button
-              type="button"
-              style={{ padding: "6px 8px", borderRadius: 8 }}
-              onClick={() => onOpenManageVehicleTypes?.()}
-            >
-              Quản lý
-            </button>
           </div>
         </div>
 

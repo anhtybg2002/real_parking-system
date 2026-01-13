@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import ModalShell from "../common/ModalShell";
 import commonStyles from "../../styles/commonStyles";
 
-const TAB = { INVOICE: "invoice", EMAIL: "email" };
+const TAB = { INVOICE: "invoice", EMAIL: "email", ENTRY_TICKET: "entry_ticket" };
 
 // Tokens backend hỗ trợ
 const VARS = [
@@ -16,6 +16,9 @@ const VARS = [
   { key: "{customer_name}", label: "Tên khách" },
   { key: "{customer_phone}", label: "SĐT" },
   { key: "{log_type}", label: "Loại hóa đơn" },
+  { key: "{ticket_id}", label: "Số hiệu vé" },
+  { key: "{parking_area}", label: "Khu vực đỗ xe" },
+  { key: "{parking_slot}", label: "Slot đỗ xe" },
 
   { key: "{site_name}", label: "Tên bãi xe" },
   { key: "{site_phone}", label: "SĐT bãi xe" },
@@ -212,18 +215,22 @@ export default function PrintTemplatesModal({
 
   invoiceValue,
   emailValue,
+  entryTicketValue,
 
   invoicePreview,
   emailPreview,
+  entryTicketPreview,
 
   loading,
   saving,
 
   onSaveInvoice,
   onSaveEmail,
+  onSaveEntryTicket,
 
   onResetInvoice,
   onResetEmail,
+  onResetEntryTicket,
 
   onRefreshPreview,
 }) {
@@ -232,6 +239,7 @@ export default function PrintTemplatesModal({
   // state lưu html
   const [invoice, setInvoice] = useState(invoiceValue);
   const [email, setEmail] = useState(emailValue);
+  const [entryTicket, setEntryTicket] = useState(entryTicketValue);
 
   const [dirty, setDirty] = useState(false);
   const markDirty = useCallback(() => setDirty(true), []);
@@ -240,6 +248,7 @@ export default function PrintTemplatesModal({
   const invoiceEditorRef = useRef(null);
   const emailEditorRef = useRef(null);
   const emailSubjectRef = useRef(null);
+  const entryTicketEditorRef = useRef(null);
 
   // selection memory (để click toolbar vẫn apply đúng vùng bôi đen)
   const selectionRef = useRef(null);
@@ -251,7 +260,7 @@ export default function PrintTemplatesModal({
   const syncTimerRef = useRef(null);
 
   // hydrate control: chỉ đổ innerHTML khi mở modal / data từ backend đổi, không đổ theo mỗi lần state đổi
-  const hydratedRef = useRef({ invoice: false, email: false });
+  const hydratedRef = useRef({ invoice: false, email: false, entry_ticket: false });
 
   // =========================
   // 1) Sync props -> local khi mở modal / backend load template
@@ -261,17 +270,19 @@ export default function PrintTemplatesModal({
 
     setInvoice(invoiceValue);
     setEmail(emailValue);
+    setEntryTicket(entryTicketValue);
     setDirty(false);
 
-    hydratedRef.current = { invoice: false, email: false };
+    hydratedRef.current = { invoice: false, email: false, entry_ticket: false };
 
     // đổ HTML tương ứng tab hiện tại ngay để user thấy
     requestAnimationFrame(() => {
       if (invoiceEditorRef.current) invoiceEditorRef.current.innerHTML = invoiceValue?.body ?? "";
       if (emailEditorRef.current) emailEditorRef.current.innerHTML = emailValue?.body ?? "";
-      hydratedRef.current = { invoice: true, email: true };
+      if (entryTicketEditorRef.current) entryTicketEditorRef.current.innerHTML = entryTicketValue?.body ?? "";
+      hydratedRef.current = { invoice: true, email: true, entry_ticket: true };
     });
-  }, [open, invoiceValue, emailValue]);
+  }, [open, invoiceValue, emailValue, entryTicketValue]);
 
   // =========================
   // 2) Hydrate theo tab nếu cần (tránh trắng khi switch tab)
@@ -285,10 +296,15 @@ export default function PrintTemplatesModal({
           invoiceEditorRef.current.innerHTML = invoice?.body ?? invoiceValue?.body ?? "";
           hydratedRef.current.invoice = true;
         }
-      } else {
+      } else if (tab === TAB.EMAIL) {
         if (!hydratedRef.current.email && emailEditorRef.current) {
           emailEditorRef.current.innerHTML = email?.body ?? emailValue?.body ?? "";
           hydratedRef.current.email = true;
+        }
+      } else if (tab === TAB.ENTRY_TICKET) {
+        if (!hydratedRef.current.entry_ticket && entryTicketEditorRef.current) {
+          entryTicketEditorRef.current.innerHTML = entryTicket?.body ?? entryTicketValue?.body ?? "";
+          hydratedRef.current.entry_ticket = true;
         }
       }
     });
@@ -300,8 +316,9 @@ export default function PrintTemplatesModal({
   // =========================
   const currentDraft = useMemo(() => {
     if (tab === TAB.INVOICE) return { body: invoice?.body ?? "" };
-    return { subject: email?.subject ?? "", body: email?.body ?? "" };
-  }, [tab, invoice?.body, email?.subject, email?.body]);
+    if (tab === TAB.EMAIL) return { subject: email?.subject ?? "", body: email?.body ?? "" };
+    return { body: entryTicket?.body ?? "" };
+  }, [tab, invoice?.body, email?.subject, email?.body, entryTicket?.body]);
 
   // =========================
   // 4) Preview: call immediately on open/tab + debounce 1.2s khi gõ
@@ -321,7 +338,8 @@ export default function PrintTemplatesModal({
     if (!open) return;
     if (!onRefreshPreview) return;
 
-    callPreview(currentDraft, tab === TAB.INVOICE ? "invoice" : "email");
+    const whichTab = tab === TAB.INVOICE ? "invoice" : tab === TAB.EMAIL ? "email" : "entry_ticket";
+    callPreview(currentDraft, whichTab);
     lastSentRef.current = { tab: null, payloadStr: "" };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tab]);
@@ -336,7 +354,8 @@ export default function PrintTemplatesModal({
       const payloadStr = JSON.stringify(currentDraft);
       if (lastSentRef.current.tab === tab && lastSentRef.current.payloadStr === payloadStr) return;
 
-      callPreview(currentDraft, tab === TAB.INVOICE ? "invoice" : "email");
+      const whichTab = tab === TAB.INVOICE ? "invoice" : tab === TAB.EMAIL ? "email" : "entry_ticket";
+      callPreview(currentDraft, whichTab);
       lastSentRef.current = { tab, payloadStr };
     }, 1200);
 
@@ -362,9 +381,12 @@ export default function PrintTemplatesModal({
       if (tab === TAB.INVOICE) {
         const html = invoiceEditorRef.current?.innerHTML ?? "";
         setInvoice((p) => ({ ...p, body: html }));
-      } else {
+      } else if (tab === TAB.EMAIL) {
         const html = emailEditorRef.current?.innerHTML ?? "";
         setEmail((p) => ({ ...p, body: html }));
+      } else if (tab === TAB.ENTRY_TICKET) {
+        const html = entryTicketEditorRef.current?.innerHTML ?? "";
+        setEntryTicket((p) => ({ ...p, body: html }));
       }
     }, 250);
   }, [tab]);
@@ -378,8 +400,15 @@ export default function PrintTemplatesModal({
       setInvoice((p) => ({ ...p, body: html }));
       return;
     }
-    const html = emailEditorRef.current?.innerHTML ?? "";
-    setEmail((p) => ({ ...p, body: html }));
+    if (tab === TAB.EMAIL) {
+      const html = emailEditorRef.current?.innerHTML ?? "";
+      setEmail((p) => ({ ...p, body: html }));
+      return;
+    }
+    if (tab === TAB.ENTRY_TICKET) {
+      const html = entryTicketEditorRef.current?.innerHTML ?? "";
+      setEntryTicket((p) => ({ ...p, body: html }));
+    }
   }, [tab]);
 
   // =========================
@@ -398,6 +427,7 @@ export default function PrintTemplatesModal({
     // đánh dấu tab kia cần hydrate (để chắc chắn)
     if (nextTab === TAB.INVOICE) hydratedRef.current.invoice = false;
     if (nextTab === TAB.EMAIL) hydratedRef.current.email = false;
+    if (nextTab === TAB.ENTRY_TICKET) hydratedRef.current.entry_ticket = false;
   };
 
   // =========================
@@ -460,6 +490,15 @@ export default function PrintTemplatesModal({
       return;
     }
 
+    if (tab === TAB.ENTRY_TICKET) {
+      entryTicketEditorRef.current?.focus();
+      insertTextAtSelection(varText);
+      markDirty();
+      syncEditorToStateDebounced();
+      captureSelection();
+      return;
+    }
+
     // tab email: nếu focus body thì insert body, còn không thì subject
     const active = document.activeElement;
     if (active === emailEditorRef.current) {
@@ -508,6 +547,11 @@ export default function PrintTemplatesModal({
     );
   };
 
+  const handleSaveEntryTicket = () => {
+    if (tab === TAB.ENTRY_TICKET) syncEditorToStateNow();
+    setTimeout(() => onSaveEntryTicket?.({ ...entryTicket, body: entryTicketEditorRef.current?.innerHTML ?? entryTicket?.body ?? "" }), 0);
+  };
+
   if (!open) return null;
 
   return (
@@ -536,7 +580,7 @@ export default function PrintTemplatesModal({
                 Lưu mẫu hóa đơn
               </button>
             </>
-          ) : (
+          ) : tab === TAB.EMAIL ? (
             <>
               <button type="button" style={commonStyles.buttonSecondary} onClick={onResetEmail} disabled={saving}>
                 Reset mẫu email
@@ -549,6 +593,21 @@ export default function PrintTemplatesModal({
                 title={dirty ? "Có thay đổi chưa lưu" : ""}
               >
                 Lưu mẫu email
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" style={commonStyles.buttonSecondary} onClick={onResetEntryTicket} disabled={saving}>
+                Reset mẫu vé vào bãi
+              </button>
+              <button
+                type="button"
+                style={commonStyles.buttonPrimary}
+                onClick={handleSaveEntryTicket}
+                disabled={saving}
+                title={dirty ? "Có thay đổi chưa lưu" : ""}
+              >
+                Lưu mẫu vé vào bãi
               </button>
             </>
           )}
@@ -587,6 +646,22 @@ export default function PrintTemplatesModal({
           }}
         >
           Mẫu email gửi khách
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSwitchTab(TAB.ENTRY_TICKET)}
+          style={{
+            ...commonStyles.buttonSmall,
+            background: tab === TAB.ENTRY_TICKET ? "#111827" : "#fff",
+            color: tab === TAB.ENTRY_TICKET ? "#fff" : "#111827",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            padding: "8px 12px",
+            fontWeight: 800,
+          }}
+        >
+          Mẫu in vé vào bãi
         </button>
 
         {loading ? (
@@ -661,7 +736,7 @@ export default function PrintTemplatesModal({
             />
           </div>
         </div>
-      ) : (
+      ) : tab === TAB.EMAIL ? (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
             <label style={commonStyles.label}>
@@ -726,6 +801,56 @@ export default function PrintTemplatesModal({
               <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>Body:</div>
               <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: emailPreview?.body || "—" }} />
             </div>
+          </div>
+        </div>
+      ) : (
+        // TAB.ENTRY_TICKET
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div>
+            <div style={{ ...commonStyles.label, marginBottom: 6 }}>Nội dung mẫu in vé vào bãi</div>
+
+            <div
+              ref={entryTicketEditorRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={() => {
+                markDirty();
+                syncEditorToStateDebounced();
+              }}
+              onMouseUp={captureSelection}
+              onKeyUp={captureSelection}
+              onFocus={captureSelection}
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 12,
+                padding: 12,
+                minHeight: 360,
+                background: "#fff",
+                outline: "none",
+                fontSize: 13,
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+              }}
+            />
+
+            <div style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>
+              Tip: Bôi đen đoạn cần format rồi bấm toolbar. Cỡ chữ: chọn số rồi bấm <b>Áp dụng</b>. Preview tự cập nhật sau ~1.2s.
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#111827" }}>Xem trước</div>
+            <div
+              style={{
+                marginTop: 8,
+                border: "1px dashed #e5e7eb",
+                borderRadius: 12,
+                padding: 12,
+                background: "#fafafa",
+                minHeight: 360,
+              }}
+              dangerouslySetInnerHTML={{ __html: entryTicketPreview || "—" }}
+            />
           </div>
         </div>
       )}

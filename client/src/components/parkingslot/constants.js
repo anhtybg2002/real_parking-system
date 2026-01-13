@@ -4,24 +4,9 @@ export const STATUS_META = {
     bg: "#F3F4F6",      
     color: "#374151",   
   },
-  RESERVED: {
-    label: "Giữ chỗ",
-    bg: "#8B5CF6",      
-    color: "#FFFFFF",
-  },
   OCCUPIED: {
     label: "Đang đỗ",
     bg: "#16A34A",     
-    color: "#FFFFFF",
-  },
-  LOCKED: {
-    label: "Khóa",
-    bg: "#111827",      
-    color: "#FFFFFF",
-  },
-  MAINT: {
-    label: "Bảo trì",
-    bg: "#F97316",      
     color: "#FFFFFF",
   },
 };
@@ -60,10 +45,10 @@ export const CELL_KIND_META = {
     icon: "⇢",
   },
   BLOCKED: {
-    label: "Chặn",
-    bg: "#111827",     // giống LOCKED (cấm)
+    label: "Chan",
+    bg: "#111827",
     color: "#FFFFFF",
-    icon: "⛔",
+    icon: "X",
   },
   
   PARKING_CAR:  { 

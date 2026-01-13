@@ -109,7 +109,7 @@ class ParkingSlot(Base):
 
     
     # Trạng thái slot (đồng bộ với UI)
-    # EMPTY | RESERVED | OCCUPIED | LOCKED | MAINT
+    # EMPTY | OCCUPIED
     status = Column(String(20), nullable=False, default="EMPTY", index=True)
 
     note = Column(String(255), nullable=True)

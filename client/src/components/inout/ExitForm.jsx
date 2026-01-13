@@ -19,7 +19,7 @@ export default function ExitForm({
   };
 
   return (
-    <Card title="Vehicle Exit">
+    <Card title="Ghi nhận xe ra">
       <form onSubmit={handleSubmit}>
         {/* Biển số xe */}
         <div style={{ marginBottom: 8 }}>

@@ -29,6 +29,7 @@ export default function PricingForm({
 }) {
   const isCar = vehicleType === "car";
   const isMotorbike = vehicleType === "motorbike";
+  const isOther = vehicleType === "other";
   const vt = useVehicleTypes();
   const isHourly = pricingType === "hourly";
   const isBlock = pricingType === "block";
@@ -94,7 +95,7 @@ export default function PricingForm({
         </label>
 
         {/* --- Giá theo ca --- */}
-        {isBlock && (
+        {(isBlock || isOther) && (
           <>
             <label style={styles.label}>
               Giá ca sáng (06:00 – 18:00) (VNĐ)
@@ -123,7 +124,7 @@ export default function PricingForm({
         )}
 
         {/* --- Giá theo giờ --- */}
-        {isHourly && (
+        {(isHourly || isOther) && (
           <>
             <label style={styles.label}>
               Giá theo giờ ban ngày (VNĐ)

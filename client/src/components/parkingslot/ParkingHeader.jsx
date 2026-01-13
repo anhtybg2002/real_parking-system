@@ -1,7 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import commonStyles from "../../styles/commonStyles";
 
-export default function ParkingHeader({ goEditMap }) {
+export default function ParkingHeader() {
+  const navigate = useNavigate();
+  
   const headerRow = {
     display: "flex",
     alignItems: "flex-start",
@@ -26,11 +29,18 @@ export default function ParkingHeader({ goEditMap }) {
       <div style={row}>
         <button
           type="button"
-          style={commonStyles.buttonPrimary}
-          onClick={goEditMap}
+          style={{
+            ...commonStyles.buttonSecondary,
+            padding: "10px 16px",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+          onClick={() => navigate("/dashboard/parking-slot-events")}
         >
-          Chỉnh sửa bản đồ bãi xe
+          📋 Xem lịch sử chỗ đỗ
         </button>
+        
+        {/* Removed: edit map button from header */}
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ const Sidebar = () => {
       { label: "Cấu hình giá", icon: "pricing", path: "/dashboard/pricing" },
       { label: "Hóa đơn", icon: "invoices", path: "/dashboard/invoices" },
       { label: "Quản lý chỗ đỗ bãi xe", icon: "", path: "/dashboard/parking-area" },
+      
       { label: "Nhân viên", icon: "staff", path: "/dashboard/staff" },
       { label: "Báo cáo", icon: "reports", path: "/dashboard/reports" },
       { label: "Cài đặt", icon: "settings", path: "/dashboard/settings" },

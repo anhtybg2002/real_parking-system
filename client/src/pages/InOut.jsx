@@ -10,9 +10,65 @@ import AlertMessages from "../components/inout/AlertMessages";
 
 import EntryForm from "../components/inout/EntryForm";
 import ExitForm from "../components/inout/ExitForm";
-import VehicleTypeModal from "../components/settings/VehicleTypeModal";
-import useVehicleTypes from "../hooks/useVehicleTypes";
+import { VEHICLE_TYPES } from "../constants/vehicleTypes";
 import { formatTime } from "../components/common/deps";
+import { renderTemplate } from "../api/settingsTemplates";
+
+// Helper: Mở cửa sổ in (từ InvoicesPage)
+const openPrintWindow = (textOrHtml) => {
+  const w = window.open("", "_blank", "width=820,height=900");
+  if (!w) {
+    alert("Trình duyệt đang chặn popup. Hãy cho phép pop-up để in.");
+    return;
+  }
+
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(String(textOrHtml || ""));
+
+  const body = looksLikeHtml
+    ? String(textOrHtml || "")
+    : `<pre style="white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;font-size:13px;line-height:1.6;margin:0;">${String(
+        textOrHtml || "—"
+      )
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")}</pre>`;
+
+  w.document.open();
+  w.document.write(`
+    <html>
+      <head>
+        <title>In hóa đơn</title>
+        <meta charset="utf-8" />
+        <style>
+          @media print { body { margin: 0; } }
+          body { padding: 16px; color: #111827; }
+        </style>
+      </head>
+      <body>
+        ${body}
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  w.document.close();
+};
+
+const formatDuration = (entryIso, exitIso) => {
+  if (!entryIso || !exitIso) return "—";
+  const a = new Date(entryIso);
+  const b = new Date(exitIso);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return "—";
+  const ms = Math.max(0, b.getTime() - a.getTime());
+  const mins = Math.floor(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h <= 0) return `${m} phút`;
+  return `${h} giờ ${m} phút`;
+};
 
 // URL backend FastAPI
 const BACKEND_URL = "http://localhost:8000";
@@ -28,9 +84,7 @@ export default function InOut() {
   // Entry form
   const [entryPlate, setEntryPlate] = useState("");
   const [entryVehicleType, setEntryVehicleType] = useState("car");
- const [entryAreaId, setEntryAreaId] = useState(null);
-  const [vtManageOpen, setVtManageOpen] = useState(false);
-  const vehicleTypes = useVehicleTypes();
+  const [entryAreaId, setEntryAreaId] = useState(null);
 
 
   // Exit form
@@ -53,7 +107,7 @@ export default function InOut() {
       );
 
       const [areasRes, logsRes] = await Promise.all([
-        axiosClient.get("/parking/areas"),
+        axiosClient.get("/inout/parking-areas"),
         axiosClient.get("/inout/logs/active"),
       ]);
 
@@ -80,10 +134,81 @@ export default function InOut() {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ==================== HÀM QUÉT BIỂN SỐ DÙNG CHUNG ====================
+  // Hàm in vé vào
+  const handlePrintEntryTicket = async (entryData) => {
+    try {
+      const siteInfo = {
+        site_name: "Bãi Đỗ Xe ABC",
+        site_address: "123 Đường XYZ, Quận 1, TP.HCM",
+        site_phone: "0123 456 789"
+      };
+
+      const templateData = {
+        license_plate: entryData?.license_plate_number || "—",
+        vehicle_type: VEHICLE_TYPES[entryData?.vehicle_type]?.label || entryData?.vehicle_type || "—",
+        entry_time: entryData?.entry_time ? formatTime(entryData.entry_time) : "—",
+        ticket_id: `VE${String(entryData?.log_id || entryData?.id || "").padStart(6, "0")}`,
+        parking_area: entryData?.parking_area_name || `Khu ${entryData?.parking_area_id}` || "—",
+        parking_slot: entryData?.parking_slot_code || "—",
+        ...siteInfo
+      };
+
+      const res = await renderTemplate("entry_ticket_print", templateData);
+      const r = res?.data ?? res;
+      const d = r?.data?.data ?? r?.data ?? r;
+      const body = d?.body ?? d?.rendered ?? d ?? "";
+
+      if (!body) {
+        alert("Không thể tạo vé in.");
+        return;
+      }
+
+      openPrintWindow(body);
+    } catch (err) {
+      console.error("Print error:", err);
+      alert(err?.response?.data?.detail || "Lỗi khi in vé.");
+    }
+  };
+
+  // Hàm in hóa đơn (từ InvoicesPage)
+  const handlePrintInvoice = async (exitData) => {
+    try {
+      const siteInfo = {
+        site_name: "Bãi Đỗ Xe ABC",
+        site_address: "123 Đường XYZ, Quận 1, TP.HCM",
+        site_phone: "0123 456 789",
+        invoice_note: "Giữ vé cẩn thận – mất vé phạt theo quy định"
+      };
+
+      const templateData = {
+        log_type: exitData?.is_monthly_ticket ? "Vé tháng" : "Vé gửi xe",
+        license_plate: exitData?.license_plate || "—",
+        vehicle_type: VEHICLE_TYPES[exitData?.vehicle_type]?.label || exitData?.vehicle_type || "—",
+        entry_time: exitData?.entry_time ? formatTime(exitData.entry_time) : "—",
+        exit_time: exitData?.exit_time ? formatTime(exitData.exit_time) : "—",
+        amount: exitData?.amount ? exitData.amount.toLocaleString("vi-VN") : "0",
+        ...siteInfo
+      };
+
+      const res = await renderTemplate("invoice_print", templateData);
+      const r = res?.data ?? res;
+      const d = r?.data?.data ?? r?.data ?? r;
+      const body = d?.body ?? d?.rendered ?? d ?? "";
+
+      if (!body) {
+        alert("Không thể tạo hóa đơn in.");
+        return;
+      }
+
+      openPrintWindow(body);
+    } catch (err) {
+      console.error("Print invoice error:", err);
+      alert(err?.response?.data?.detail || "Lỗi khi in hóa đơn.");
+    }
+  };
+
   const scanPlate = async (target = "entry") => {
     // target: "entry" hoặc "exit"
     setAlert({ type: "", message: "" });
@@ -126,7 +251,7 @@ export default function InOut() {
   const handleScanEntryPlate = () => scanPlate("entry");
   const handleScanExitPlate = () => scanPlate("exit");
 
-  // ==================== ENTRY ====================
+  
   const handleEntry = async () => {
     setAlert({ type: "", message: "" });
 
@@ -145,24 +270,27 @@ export default function InOut() {
       const payload = {
         license_plate_number: plate.toUpperCase(),
         vehicle_type: entryVehicleType || "car",
-        parking_area_id: Number(entryAreaId),                 // ✅ ID (int)
-        preferred_slot_id: null,                              // ✅ hiện chưa chọn slot từ UI
-        entry_plate_image_base64: entryCapturedPlateImage || null, // ✅ đúng tên
+        parking_area_id: Number(entryAreaId),                 
+        preferred_slot_id: null,                              
+        entry_plate_image_base64: entryCapturedPlateImage || null, 
       };
 
       const res = await axiosClient.post("/inout/entry", payload);
       const data = res?.data ?? res;
       const message = data?.message || "Đã ghi nhận xe vào bãi.";
+      
+      // Lưu dữ liệu entry để in vé
+      const entryData = data?.data || data;
 
       setEntryPlate("");
       setEntryCapturedPlateImage(null);
 
       await fetchData();
 
-      setAlert({ type: "entry", message });
+      setAlert({ type: "entry", message, entryData });
     } catch (err) {
       console.error(err);
-      console.log("ENTRY ERROR DETAIL:", err?.response?.data); // ✅ xem lỗi validate
+      console.log("ENTRY ERROR DETAIL:", err?.response?.data); 
 
       const msg =
         err?.response?.data?.detail ||
@@ -190,18 +318,18 @@ export default function InOut() {
 
     const payload = {
       license_plate_number: plate,
-      exit_plate_image_base64: exitCapturedPlateImage || null, // ✅ đúng tên
+      exit_plate_image_base64: exitCapturedPlateImage || null, 
     };
 
     try {
       const res = await axiosClient.post("/inout/exit", payload);
       const data = res?.data ?? res;
 
-      // backend mới trả: { ok, message, data: {...} }
+      // backend trả: { ok, message, data: {...} }
       const exitData = data?.data ?? data ?? {};
 
       const isMonthly = exitData.is_monthly_ticket;
-      const hours = exitData.duration_hours ?? exitData.hours ?? null;
+      const hours = exitData.duration_hours ?? null;
       const amount = exitData.amount;
 
       let message = data?.message || `Xe ${plate} đã rời bãi.`;
@@ -230,6 +358,7 @@ export default function InOut() {
       setAlert({
         type: "exit",
         message,
+        exitData: exitData, // Lưu dữ liệu để in hóa đơn
       });
     } catch (err) {
       console.error(err);
@@ -244,19 +373,7 @@ export default function InOut() {
     }
   };
 
-  // ==================== STATS & TABLE ====================
-  const totalCapacity = areas.reduce(
-    (sum, a) => sum + (a.capacity || 0),
-    0
-  );
-  const totalCurrent = areas.reduce(
-    (sum, a) => sum + (a.current_count || 0),
-    0
-  );
-  const occupancy =
-    totalCapacity > 0
-      ? Math.round((totalCurrent / totalCapacity) * 100)
-      : 0;
+ 
 
   const tableColumns = [
     { key: "index", label: "#" },
@@ -268,8 +385,7 @@ export default function InOut() {
 
   const convertVehicleType = (t) => {
     if (!t) return "—";
-    // vehicleTypes.map provided by hook: { key: label }
-    return vehicleTypes.map[t] || (t === "car" ? "Ô tô" : t === "motorbike" ? "Xe máy" : t);
+    return (VEHICLE_TYPES[t] && VEHICLE_TYPES[t].label) || (t === "car" ? "Ô tô" : t === "motorbike" ? "Xe máy" : t);
   };
 
   const tableData = activeLogs.map((log, index) => ({
@@ -291,8 +407,8 @@ export default function InOut() {
 
   // ==================== RENDER ====================
   return (
-    <AppLayout title="Vehicle Entry / Exit">
-      <AlertMessages alert={alert} />
+    <AppLayout title="Nhập / Xuất xe">
+      <AlertMessages alert={alert} onPrintTicket={handlePrintEntryTicket} onPrintInvoice={handlePrintInvoice} />
 
       {/* Hàng trên: LIVESTREAM (trái) + Entry/Exit (phải) */}
       <div
@@ -357,7 +473,6 @@ export default function InOut() {
             setEntryVehicleType={setEntryVehicleType}
             entryArea={entryAreaId}
             setEntryArea={setEntryAreaId}
-            onOpenManageVehicleTypes={() => setVtManageOpen(true)}
 
             areas={areas}
             inputStyle={inputStyle}
@@ -365,16 +480,7 @@ export default function InOut() {
             scanBtnStyle={secondaryBtnStyle}
             capturedPlateImage={entryCapturedPlateImage}
           />
-          <VehicleTypeModal
-            open={vtManageOpen}
-            onClose={() => setVtManageOpen(false)}
-            value={vehicleTypes.list}
-            onChange={() => {}}
-            onSave={async () => {
-              await vehicleTypes.reload?.();
-              setVtManageOpen(false);
-            }}
-          />
+          
 
           <ExitForm
             onSubmit={handleExit}

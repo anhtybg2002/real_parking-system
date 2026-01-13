@@ -10,7 +10,6 @@ export default function SlotListPanel({
   setFilters,
   onRefresh,
   onViewOnMap,
-  onToggleLockInline,
   onReleaseInline,
 }) {
   const vt = useVehicleTypes();
@@ -85,10 +84,7 @@ export default function SlotListPanel({
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="EMPTY">Trống</option>
-            <option value="RESERVED">Giữ chỗ</option>
             <option value="OCCUPIED">Đang đỗ</option>
-            <option value="LOCKED">Khóa</option>
-            <option value="MAINT">Bảo trì</option>
           </select>
         </div>
 
@@ -124,18 +120,15 @@ export default function SlotListPanel({
                         Xem bản đồ
                       </button>
 
-                      <button style={commonStyles.buttonSmall} type="button" onClick={() => onToggleLockInline?.(s)}>
-                        {s.status === "LOCKED" ? "Mở khóa" : "Khóa"}
-                      </button>
 
                       <button
                         style={{
                           ...commonStyles.buttonSmall,
-                          opacity: ["OCCUPIED", "RESERVED"].includes(s.status) ? 1 : 0.4,
-                          cursor: ["OCCUPIED", "RESERVED"].includes(s.status) ? "pointer" : "not-allowed",
+                          opacity: ["OCCUPIED"].includes(s.status) ? 1 : 0.4,
+                          cursor: ["OCCUPIED"].includes(s.status) ? "pointer" : "not-allowed",
                         }}
                         type="button"
-                        disabled={!["OCCUPIED", "RESERVED"].includes(s.status)}
+                        disabled={!["OCCUPIED"].includes(s.status)}
                         onClick={() => onReleaseInline?.(s)}
                       >
                         Đặt trống

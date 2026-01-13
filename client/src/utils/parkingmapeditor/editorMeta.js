@@ -14,7 +14,7 @@ export function metaForKind(kind) {
   if (CELL_KIND_META?.[kind]) return CELL_KIND_META[kind];
 
   if (kind === "PARKING") {
-    const m = STATUS_META.RESERVED;
+    const m = STATUS_META.EMPTY;
     return { label: "Vùng chỗ đỗ", bg: m.bg, color: m.color, border: "rgba(0,0,0,0.12)", icon: "🅿️" };
   }
   if (kind === "ROAD") {

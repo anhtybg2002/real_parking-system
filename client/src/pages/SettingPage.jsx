@@ -1,5 +1,6 @@
 // src/pages/SettingsHubPage.jsx
 import React, { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 import Card from "../components/common/Card";
 import commonStyles from "../styles/commonStyles";
@@ -8,9 +9,7 @@ import Tile from "../components/common/Tile";
 import SiteInfoModal from "../components/settings/SiteInfoModal";
 import MonthlyEmailReminderModal from "../components/settings/MonthlyEmailReminderModal";
 import PrintTemplatesModal from "../components/settings/PrintTemplatesModal";
-import VehicleTypeModal from "../components/settings/VehicleTypeModal";
 import RbacModal from "../components/settings/RbacModal";
-import useVehicleTypes from "../hooks/useVehicleTypes";
 
 import { isValidEmail } from "../components/settings/validators";
 import {
@@ -48,6 +47,7 @@ function pickRendered(res) {
 }
 
 export default function SettingsHubPage() {
+  const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
 
   // ===== SITE INFO (chuẩn hoá key: site_*) =====
@@ -83,9 +83,17 @@ export default function SettingsHubPage() {
     description: "",
   });
 
+  const [entryTicketTpl, setEntryTicketTpl] = useState({
+    key: "entry_ticket_print",
+    subject: null,
+    body: "",
+    description: "",
+  });
+
   // ===== Previews =====
   const [invoicePreview, setInvoicePreview] = useState("");
   const [emailPreview, setEmailPreview] = useState({ subject: "", body: "" });
+  const [entryTicketPreview, setEntryTicketPreview] = useState("");
 
   // ===== Loading/saving flags =====
   const [tplLoading, setTplLoading] = useState(false); // load template lần đầu
@@ -96,8 +104,6 @@ export default function SettingsHubPage() {
   const previewInFlightRef = useRef(false);
   const pendingPreviewRef = useRef(null);
 
-  // ===== Vehicle types =====
-  const vehicleTypes = useVehicleTypes();
 
   const sectionTitle = (t) => (
     <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 8 }}>
@@ -111,36 +117,35 @@ export default function SettingsHubPage() {
     </div>
   );
 
-  // ===== Build preview data (demo) =====
-  const buildInvoicePreviewData = () => ({
-    // site info (đã chuẩn hoá)
-    site_name: site.site_name || "Bãi xe",
-    site_address: site.site_address || "—",
-    site_phone: site.site_phone || "—",
+  // ===== Build preview data (demo) - All templates =====
+  const buildPreviewData = () => ({
+    // Site info (common)
+    site_name: site.site_name || "Bãi xe Miền Đông",
+    site_address: site.site_address || "123 Đường Nguyễn Huệ, Quận 1, TP.HCM",
+    site_phone: site.site_phone || "028 3821 9999",
     invoice_note: site.invoice_note || "",
 
-    // invoice demo
-    log_type: "Vé gửi xe hoặc Vé tháng",
+    // Vehicle info (common)
     license_plate: "30A-123.45",
     vehicle_type: "Ô tô",
     entry_time: "27/12/2025 08:10",
+
+    // Invoice specific
+    log_type: "Vé gửi xe hoặc Vé tháng",
     exit_time: "27/12/2025 10:20",
     duration: "2 giờ 10 phút",
     amount: "20,000",
-  });
 
-  const buildEmailPreviewData = () => ({
+    // Email specific
     customer_name: "Nguyễn Văn A",
-    license_plate: "30A-123.45",
     area: "A",
-    vehicle_type: "Ô tô",
     end_date: "01/01/2026",
     days_left: 5,
 
-    // site info (đã chuẩn hoá)
-    site_name: site.site_name || "Bãi xe",
-    site_address: site.site_address || "—",
-    site_phone: site.site_phone || "—",
+    // Entry ticket specific
+    ticket_id: "VE20251227081001",
+    parking_area: "Khu A - Tầng 1",
+    parking_slot: "S100",
   });
 
   // =========================================================
@@ -150,7 +155,7 @@ export default function SettingsHubPage() {
     if (tab === "invoice") {
       const body = String(draft?.body ?? "");
 
-      const pvInvoiceRes = await renderTemplate("invoice_print", buildInvoicePreviewData(), {
+      const pvInvoiceRes = await renderTemplate("invoice_print", buildPreviewData(), {
         template_subject: null,
         template_body: body,
       });
@@ -164,13 +169,25 @@ export default function SettingsHubPage() {
       const subject = String(draft?.subject ?? "");
       const body = String(draft?.body ?? "");
 
-      const pvEmailRes = await renderTemplate("monthly_expiry_email", buildEmailPreviewData(), {
+      const pvEmailRes = await renderTemplate("monthly_expiry_email", buildPreviewData(), {
         template_subject: subject,
         template_body: body,
       });
 
       const pv = pickRendered(pvEmailRes);
       setEmailPreview({ subject: pv.subject || "", body: pv.body || "" });
+    }
+
+    if (tab === "entry_ticket") {
+      const body = String(draft?.body ?? "");
+
+      const pvEntryRes = await renderTemplate("entry_ticket_print", buildPreviewData(), {
+        template_subject: null,
+        template_body: body,
+      });
+
+      const pv = pickRendered(pvEntryRes);
+      setEntryTicketPreview(pv.body || "");
     }
   };
 
@@ -183,34 +200,43 @@ export default function SettingsHubPage() {
 
     try {
       // Load templates từ DB (1 lần)
-      const [resInvoice, resEmail] = await Promise.all([
+      const [resInvoice, resEmail, resEntry] = await Promise.all([
         getTemplate("invoice_print"),
         getTemplate("monthly_expiry_email"),
+        getTemplate("entry_ticket_print"),
       ]);
 
       const inv = pickTemplate(resInvoice, "invoice_print");
       const em = pickTemplate(resEmail, "monthly_expiry_email");
+      const et = pickTemplate(resEntry, "entry_ticket_print");
 
       setInvoiceTpl(inv);
       setEmailTpl(em);
+      setEntryTicketTpl(et);
 
       // Render preview 1 lần theo template hiện tại
-      const [pvInvoiceRes, pvEmailRes] = await Promise.all([
-        renderTemplate("invoice_print", buildInvoicePreviewData(), {
+      const [pvInvoiceRes, pvEmailRes, pvEntryRes] = await Promise.all([
+        renderTemplate("invoice_print", buildPreviewData(), {
           template_subject: null,
           template_body: inv.body ?? "",
         }),
-        renderTemplate("monthly_expiry_email", buildEmailPreviewData(), {
+        renderTemplate("monthly_expiry_email", buildPreviewData(), {
           template_subject: em.subject ?? "",
           template_body: em.body ?? "",
+        }),
+        renderTemplate("entry_ticket_print", buildPreviewData(), {
+          template_subject: null,
+          template_body: et.body ?? "",
         }),
       ]);
 
       const pvInvoice = pickRendered(pvInvoiceRes);
       const pvEmail = pickRendered(pvEmailRes);
+      const pvEntry = pickRendered(pvEntryRes);
 
       setInvoicePreview(pvInvoice.body || "");
       setEmailPreview({ subject: pvEmail.subject || "", body: pvEmail.body || "" });
+      setEntryTicketPreview(pvEntry.body || "");
     } catch (e) {
       console.error(e);
       alert("Không tải được templates");
@@ -303,6 +329,31 @@ export default function SettingsHubPage() {
     }
   };
 
+  const handleSaveEntryTicketTemplate = async (nextTpl) => {
+    const body = String(nextTpl?.body ?? "").trim();
+    if (!body) return alert("Mẫu in vé vào bãi không được để trống.");
+
+    try {
+      setTplSaving(true);
+
+      await updateTemplate("entry_ticket_print", {
+        subject: null,
+        body,
+        description: nextTpl?.description ? String(nextTpl.description) : null,
+      });
+
+      setEntryTicketTpl((p) => ({ ...p, body }));
+
+      alert("Đã lưu mẫu in vé vào bãi.");
+      setActiveModal(null);
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data?.detail || "Lưu mẫu vé thất bại.");
+    } finally {
+      setTplSaving(false);
+    }
+  };
+
   // =========================================================
   // 4) RESET: reset DB rồi load lại template 1 lần
   // =========================================================
@@ -317,7 +368,7 @@ export default function SettingsHubPage() {
       const inv = pickTemplate(resInvoice, "invoice_print");
       setInvoiceTpl(inv);
 
-      const pvInvoiceRes = await renderTemplate("invoice_print", buildInvoicePreviewData(), {
+      const pvInvoiceRes = await renderTemplate("invoice_print", buildPreviewData(), {
         template_subject: null,
         template_body: inv.body ?? "",
       });
@@ -344,7 +395,7 @@ export default function SettingsHubPage() {
       const em = pickTemplate(resEmail, "monthly_expiry_email");
       setEmailTpl(em);
 
-      const pvEmailRes = await renderTemplate("monthly_expiry_email", buildEmailPreviewData(), {
+      const pvEmailRes = await renderTemplate("monthly_expiry_email", buildPreviewData(), {
         template_subject: em.subject ?? "",
         template_body: em.body ?? "",
       });
@@ -360,6 +411,33 @@ export default function SettingsHubPage() {
     }
   };
 
+  const handleResetEntryTicketTemplate = async () => {
+    if (!window.confirm("Reset mẫu in vé vào bãi về mặc định?")) return;
+
+    try {
+      setTplSaving(true);
+      await resetTemplate("entry_ticket_print");
+
+      const resEntry = await getTemplate("entry_ticket_print");
+      const et = pickTemplate(resEntry, "entry_ticket_print");
+      setEntryTicketTpl(et);
+
+      const pvEntryRes = await renderTemplate("entry_ticket_print", buildPreviewData(), {
+        template_subject: null,
+        template_body: et.body ?? "",
+      });
+      const pv = pickRendered(pvEntryRes);
+      setEntryTicketPreview(pv.body || "");
+
+      alert("Đã reset mẫu in vé vào bãi.");
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data?.detail || "Reset mẫu vé thất bại.");
+    } finally {
+      setTplSaving(false);
+    }
+  };
+
   // ===== Send email test =====
   const handleSendEmailTest = async (toEmail) => {
     const email = String(toEmail || "").trim();
@@ -368,7 +446,7 @@ export default function SettingsHubPage() {
 
     try {
       setTplSaving(true);
-      await sendTestMonthlyExpiryEmail(email, buildEmailPreviewData());
+      await sendTestMonthlyExpiryEmail(email, buildPreviewData());
       alert(`Đã gửi test tới ${email}`);
     } catch (e) {
       console.error(e);
@@ -437,11 +515,20 @@ export default function SettingsHubPage() {
             />
 
             <Tile
-              icon="🚗"
-              title="Cài đặt loại xe"
-              desc="Chuẩn hóa Xe máy / Ô tô / Khác và bật/tắt sử dụng."
-              onClick={() => setActiveModal("vehicleType")}
+              icon="➕"
+              title="Thêm bãi đỗ xe"
+              desc="Tạo bãi đỗ xe mới với bản đồ chỗ đỗ."
+              onClick={() => navigate("/dashboard/settings/parking-area/new")}
             />
+
+            <Tile
+              icon="🗺️"
+              title="Chỉnh sửa bản đồ bãi"
+              desc="Chọn bãi và mở trình chỉnh sửa bản đồ."
+              onClick={() => navigate("/dashboard/settings/parking-area")}
+            />
+
+            {/* Vehicle type settings removed — using default types: Xe máy / Ô tô / Khác */}
           </div>
 
           <div style={{ marginTop: 12 }}>
@@ -478,28 +565,22 @@ export default function SettingsHubPage() {
         onClose={() => setActiveModal(null)}
         invoiceValue={invoiceTpl}
         emailValue={emailTpl}
+        entryTicketValue={entryTicketTpl}
         invoicePreview={invoicePreview}
         emailPreview={emailPreview}
+        entryTicketPreview={entryTicketPreview}
         loading={previewLoading}
         saving={tplSaving}
         onSaveInvoice={handleSaveInvoiceTemplate}
         onSaveEmail={handleSaveEmailTemplate}
+        onSaveEntryTicket={handleSaveEntryTicketTemplate}
         onResetInvoice={handleResetInvoiceTemplate}
         onResetEmail={handleResetEmailTemplate}
+        onResetEntryTicket={handleResetEntryTicketTemplate}
         onRefreshPreview={handleRefreshPreview}
       />
 
-      <VehicleTypeModal
-        open={activeModal === "vehicleType"}
-        onClose={() => setActiveModal(null)}
-        value={vehicleTypes.list}
-        onChange={() => {}}
-        onSave={async () => {
-          // refresh global vehicle types after save
-          await vehicleTypes.reload?.();
-          setActiveModal(null);
-        }}
-      />
+      {/* VehicleTypeModal removed — vehicle types are fixed defaults. */}
 
       {/* RBAC modal: all-in-one (tự GET/POST/PUT) */}
       <RbacModal open={activeModal === "rbac"} onClose={() => setActiveModal(null)} />

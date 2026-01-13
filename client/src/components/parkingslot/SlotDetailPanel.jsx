@@ -10,7 +10,6 @@ export default function SlotDetailPanel({
   swapFrom,
   onStartSwap,
   onCancelSwap,
-  onToggleLock,
   onRelease,
   onRefresh,
 }) {
@@ -131,9 +130,6 @@ export default function SlotDetailPanel({
           </div>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" style={commonStyles.buttonSmall} onClick={onToggleLock}>
-              {selected.status === "LOCKED" ? "Mở khóa" : "Khóa"}
-            </button>
 
             <button
               type="button"
@@ -149,9 +145,9 @@ export default function SlotDetailPanel({
               type="button"
               style={{
                 ...commonStyles.buttonSmall,
-                opacity: ["OCCUPIED", "RESERVED"].includes(selected.status) ? 1 : 0.4,
+                opacity: ["OCCUPIED"].includes(selected.status) ? 1 : 0.4,
               }}
-              disabled={!["OCCUPIED", "RESERVED"].includes(selected.status)}
+              disabled={!["OCCUPIED"].includes(selected.status)}
               onClick={onRelease}
             >
               Đặt trống

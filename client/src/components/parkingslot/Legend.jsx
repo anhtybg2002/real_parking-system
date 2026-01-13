@@ -36,10 +36,7 @@ export default function Legend() {
   return (
     <div style={row}>
       <div style={item}><span style={dot("#F3F4F6")} /> Trống</div>
-      <div style={item}><span style={dot("#8B5CF6")} /> Giữ chỗ</div>
       <div style={item}><span style={dot("#16A34A")} /> Đang đỗ</div>
-      <div style={item}><span style={dot("#111827")} /> Khóa</div>
-      <div style={item}><span style={dot("#F97316")} /> Bảo trì</div>
 
       <div style={item}><span style={dot("#2563EB")} /> Cổng vào</div>
       <div style={item}><span style={dot("#DC2626")} /> Cổng ra</div>

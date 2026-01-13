@@ -8,18 +8,22 @@ export default function ParkingAreaSelector({ areas, areaId, setAreaId, loading,
   if (readonly) {
     return (
       <div style={{ marginTop: 12, ...row }}>
-        <div
-          style={{
-            padding: "8px 12px",
-            borderRadius: 9999,
-            border: "1px solid #e5e7eb",
-            background: "#a9b2a7ff",
-            color: "#111827",
-            fontSize: 30,
-            fontWeight: 600,
-          }}
-        >
-          {areaName}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          
+          <div
+            style={{
+              padding: "10px 16px",
+              borderRadius: 14,
+              border: "1px solid #e5e7eb",
+              background: "#f8fafc",
+              color: "#0f172a",
+              fontSize: 18,
+              fontWeight: 800,
+              letterSpacing: 0.2,
+            }}
+          >
+            {areaName}
+          </div>
         </div>
 
         {loading && <div style={{ fontSize: 13, color: "#6b7280" }}>Đang tải dữ liệu...</div>}

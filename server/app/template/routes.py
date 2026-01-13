@@ -11,7 +11,7 @@ from .render import render_template
 from app.models import SiteInfo
 router = APIRouter(prefix="/settings/templates", tags=["Settings - Templates"])
 
-ALLOWED_KEYS = {"invoice_print", "monthly_expiry_email"}
+ALLOWED_KEYS = {"invoice_print", "monthly_expiry_email", "entry_ticket_print"}
 
 def require_admin(user: User):
     # bạn đổi logic theo RBAC của bạn (role admin/manager)

@@ -25,7 +25,7 @@ def can_edit_map(area_id: int, db: Session = Depends(get_db)):
 
 @router.get("/areas", response_model=List[schemas.ParkingAreaOut])
 def api_list_parking_areas(
-    is_active: Optional[bool] = Query(default=None),
+    is_active: Optional[bool] = Query(default=True),
     db: Session = Depends(get_db),
 ):
     return crud.list_parking_areas(db, is_active=is_active)

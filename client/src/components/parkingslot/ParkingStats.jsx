@@ -16,18 +16,14 @@ export default function ParkingStats({ slots }) {
       total: s.length,
       empty: s.filter((x) => x.status === "EMPTY").length,
       occupied: s.filter((x) => x.status === "OCCUPIED").length,
-      reserved: s.filter((x) => x.status === "RESERVED").length,
-      locked: s.filter((x) => x.status === "LOCKED").length,
     };
   }, [slots]);
 
   return (
-    <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 12 }}>
+    <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
       <StatCard title="Tổng slot" value={stats.total} />
       <StatCard title="Trống" value={stats.empty} />
       <StatCard title="Đang đỗ" value={stats.occupied} />
-      <StatCard title="Giữ chỗ" value={stats.reserved} />
-      <StatCard title="Khóa" value={stats.locked} />
     </div>
   );
 }

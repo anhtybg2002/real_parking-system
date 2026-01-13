@@ -16,6 +16,9 @@ import ParkingSlotPage from "./pages/ParkingSlotPage";
 import ParkingAreasPage from "./pages/ParkingAreaPage";
 import ParkingAreaCreatePage from "./pages/ParkingAreaCreatePage";
 import ReportsLogsPage from "./pages/ReportsLogsPage";
+import ParkingSlotEventsPage from "./pages/ParkingSlotEventsPage";
+import SettingsParkingAreaListPage from "./pages/SettingsParkingAreaListPage";
+
 function App() {
   return (
     <Routes>
@@ -104,16 +107,23 @@ function App() {
         }
       />
       <Route
-        path="/dashboard/parking-area/info"
+        path="/dashboard/settings/parking-area"
         element={
           <ProtectedRoute>
-            <ParkingSlotPage />
+            <SettingsParkingAreaListPage />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/dashboard/parking-area/editor"
+        path="/dashboard/settings/parking-area/new"
+        element={
+          <ProtectedRoute>
+            <ParkingAreaCreatePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/settings/parking-area/editor"
         element={
           <ProtectedRoute>
             <ParkingMapEditorPage />
@@ -121,20 +131,30 @@ function App() {
         }
       />
       <Route
+        path="/dashboard/parking-area/info"
+        element={
+          <ProtectedRoute>
+            <ParkingSlotPage />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/dashboard/parking-slot-events"
+        element={
+          <ProtectedRoute>
+            <ParkingSlotEventsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/dashboard/parking-area"
         element={
           <ProtectedRoute>
             <ParkingAreasPage />
           </ProtectedRoute>
         }
-      />
-      <Route 
-        path="/dashboard/parking-area/new" 
-        element={
-          <ProtectedRoute>
-            <ParkingAreaCreatePage />
-          </ProtectedRoute>
-        } 
       />
       <Route 
         path="/dashboard/reports/logs" 

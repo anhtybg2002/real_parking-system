@@ -6,13 +6,12 @@ import commonStyles from "../styles/commonStyles";
 
 import useParkingSlotData from "../hooks/useParkingSlotData";
 
+
 import {
-  updateParkingSlot,
   releaseParkingSlot,
   swapParkingSlots,
   getUnassignedVehicles,
   assignVehicleToSlot,
-  canEditParkingMap, // ✅ THÊM IMPORT NÀY
 } from "../api/parking";
 
 import ParkingHeader from "../components/parkingslot/ParkingHeader";
@@ -51,7 +50,7 @@ export default function ParkingSlotPage() {
 
   const [pendingAssign, setPendingAssign] = useState(null);
 
-  const [checkingEditMap, setCheckingEditMap] = useState(false);
+  // removed edit map state
 
   const navigate = useNavigate();
 
@@ -69,37 +68,7 @@ export default function ParkingSlotPage() {
     }
   };
 
-  const goEditMap = async () => {
-    const id = areaId || Number(initialAreaId || 0);
-    if (!id) {
-      alert("Chưa xác định được bãi xe để chỉnh bản đồ.");
-      return;
-    }
-    if (checkingEditMap) return;
-
-    setCheckingEditMap(true);
-    try {
-      const res = await canEditParkingMap(id);
-      const data = res?.data;
-
-      if (!data?.can_edit) {
-        alert(
-          `Không thể chỉnh sửa bản đồ.\n\n` +
-            `${data?.reason || "Bãi vẫn còn xe."}\n` +
-            `Số slot OCCUPIED: ${data?.occupied_count ?? "?"}\n\n` +
-            `Vui lòng đưa tất cả xe ra khỏi bãi rồi thử lại.`
-        );
-        return;
-      }
-
-      navigate(`/dashboard/parking-area/editor?areaId=${id}`);
-    } catch (e) {
-      console.error("canEditParkingMap error", e);
-      alert("Không kiểm tra được trạng thái bãi. Vui lòng thử lại.");
-    } finally {
-      setCheckingEditMap(false);
-    }
-  };
+  // removed goEditMap action from this page
 
   // Khi đổi khu: load unassigned + reset các state liên quan thao tác
   useEffect(() => {
@@ -130,13 +99,6 @@ export default function ParkingSlotPage() {
     setSwapFrom(null);
   };
 
-  const toggleLock = async () => {
-    if (!selected) return;
-    const next = selected.status === "LOCKED" ? "EMPTY" : "LOCKED";
-    await updateParkingSlot(selected.id, { status: next });
-    await refreshSlots();
-    setSelected(null);
-  };
 
   const releaseSlot = async () => {
     if (!selected) return;
@@ -223,11 +185,6 @@ export default function ParkingSlotPage() {
     setSelected(s);
   };
 
-  const onToggleLockInline = async (s) => {
-    const next = s.status === "LOCKED" ? "EMPTY" : "LOCKED";
-    await updateParkingSlot(s.id, { status: next });
-    await refreshSlots();
-  };
 
   const onReleaseInline = async (s) => {
     const ok = window.confirm(`Đặt trống slot ${s.code}?`);
@@ -239,7 +196,7 @@ export default function ParkingSlotPage() {
   return (
     <AppLayout title="Quản lý chỗ đỗ xe">
       <div style={{ padding: 24 }}>
-        <ParkingHeader goEditMap={goEditMap} checkingEditMap={checkingEditMap} />
+        <ParkingHeader />
 
         <ParkingAreaSelector
           areas={areas}
@@ -274,7 +231,6 @@ export default function ParkingSlotPage() {
               swapFrom={swapFrom}
               onStartSwap={startSwap}
               onCancelSwap={cancelSwap}
-              onToggleLock={toggleLock}
               onRelease={releaseSlot}
               onRefresh={refreshSlots}
             />
@@ -299,7 +255,6 @@ export default function ParkingSlotPage() {
             setFilters={setFilters}
             onRefresh={refreshSlots}
             onViewOnMap={onViewOnMap}
-            onToggleLockInline={onToggleLockInline}
             onReleaseInline={onReleaseInline}
           />
         )}

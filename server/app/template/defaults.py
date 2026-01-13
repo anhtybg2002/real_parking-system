@@ -37,4 +37,30 @@ DEFAULT_TEMPLATES = {
             "{site_name} - {site_phone}\n"
         ),
     },
+
+    "entry_ticket_print": {
+        "subject": None,
+        "description": "Mẫu in vé khi xe vào bãi",
+        "body": (
+            '<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">'
+            '  <div style="text-align:center; font-weight: 800; font-size: 16px;">📋 VÉ VÀO BÃI</div>'
+            '  <div style="text-align:center; font-size: 12px; color: #555;">{site_name}</div>'
+            '  <div style="text-align:center; font-size: 11px; color: #555;">{site_address}</div>'
+            '  <div style="text-align:center; font-size: 11px; color: #555;">SĐT: {site_phone}</div>'
+            '  <hr style="border:none; border-top:1px dashed #ccc; margin:10px 0;" />'
+            '  <div style="font-size: 13px;">'
+            '    <div>🚗 <b>Biển số:</b> <span style="color:#d32f2f; font-weight:bold;">{license_plate}</span></div>'
+            '    <div>⚙️ <b>Loại xe:</b> {vehicle_type}</div>'
+            '    <div>🕐 <b>Giờ vào:</b> {entry_time}</div>'
+            '    <div>🏠 <b>Vị trí:</b> {parking_area} - {parking_slot}</div>'
+            '  </div>'
+            '  <div style="border: 2px dashed #ccc; padding: 10px; margin: 10px 0; text-align: center;">'
+            '    <div style="font-size: 11px; color: #666;">Số hiệu vé</div>'
+            '    <div style="font-weight:bold; font-size: 18px; letter-spacing:2px; font-family:monospace; margin:4px 0;">{ticket_id}</div>'
+            '    <div style="font-size: 11px; color: #666; margin-top: 4px;">{parking_slot}</div>'
+            '  </div>'
+            '  <div style="margin-top: 10px; text-align:center; font-size: 11px; color: #666;">Vui lòng giữ vé. Cần vé để ra bãi.</div>'
+            '</div>'
+        ),
+    },
 }

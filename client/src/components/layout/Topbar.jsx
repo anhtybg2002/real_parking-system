@@ -1,13 +1,14 @@
 // src/components/layout/Topbar.jsx
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";   // 👈 thêm dòng này
+import { useNavigate } from "react-router-dom";   
 import Avatar from "../common/Avatar";
 import axiosClient from "../../api/axiosClient";
+import { logout } from "../../services/auth";
 
 const Topbar = ({ title = "Dashboard" }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const navigate = useNavigate();               // 👈 hook điều hướng
+  const navigate = useNavigate();              
 
   useEffect(() => {
     let isMounted = true;
@@ -80,6 +81,7 @@ const Topbar = ({ title = "Dashboard" }) => {
       } catch (e) {
         // ignore
       }
+      logout();
 
       // điều hướng về trang đăng nhập
       navigate("/login", { replace: true }); // 👈 replace để không quay lại được bằng nút Back

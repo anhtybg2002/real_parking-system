@@ -36,6 +36,7 @@ const AppLayout = ({ title, children }) => {
             display: "flex",
             flexDirection: "column",
             width: "100%",
+            minHeight: "calc(100vh - 32px)",
           }}
         >
           <Topbar title={title || active} user={{ name: "Admin" }} />

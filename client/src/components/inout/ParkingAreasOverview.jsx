@@ -3,7 +3,7 @@ import Card from "../common/Card";
 
 export default function ParkingAreasOverview({areas}){
     return(
-            <Card title="Parking Areas Overview">
+            <Card title="Tỷ lệ lấp đầy theo khu vực bãi xe">
             {areas.length === 0  && (
                 <div
                 style={{

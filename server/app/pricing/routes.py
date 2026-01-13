@@ -1,4 +1,4 @@
-# app/api/v1/endpoints/pricing_rules.py
+﻿# app/api/v1/endpoints/pricing_rules.py
 
 from typing import List
 

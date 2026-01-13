@@ -1,5 +1,6 @@
 # app/in_out/routes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.db import get_db
@@ -9,6 +10,7 @@ from app.pricing.deps import calculate_fee_for_log
 
 from .schemas import VehicleEntryIn, VehicleExitIn, LogOut, ParkingAreaOut
 from . import crud
+from app.parking.crud import list_parking_areas
 from app.permission.guards import require_page
 router = APIRouter(prefix="/inout", tags=["InOut"],dependencies=[Depends(require_page("/dashboard/inout"))])
 
@@ -28,6 +30,9 @@ def vehicle_entry(
     area = db.query(ParkingArea).filter(ParkingArea.id == area_id).first()
     if not area:
         raise HTTPException(status_code=404, detail="Bãi xe không tồn tại")
+    # Không cho ghi nhận xe vào bãi đã tắt
+    if area.is_active is False:
+        raise HTTPException(status_code=400, detail="Bãi xe đang tắt, không thể ghi nhận xe vào")
 
     # 2) Kiểm tra xe đang trong bãi (tránh trùng log active)
     existing_log = (
@@ -83,8 +88,6 @@ def vehicle_entry(
         db.add(vehicle)
         db.flush()
     else:
-        # Policy: nếu muốn “đồng bộ theo payload” thì update ở đây
-        # Nếu không muốn update, bạn có thể bỏ đoạn này và chỉ dùng vehicle_type hiện có
         if vehicle.vehicle_type != vtype:
             vehicle.vehicle_type = vtype
 
@@ -106,13 +109,23 @@ def vehicle_entry(
 
     db.commit()
     db.refresh(log)
+    db.refresh(vehicle)
+    db.refresh(area)
 
     return {
         "ok": True,
         "message": f"Xe {plate} đã được ghi nhận vào bãi {area.name} (slot {slot.code})",
-        "log_id": log.id,
-        "parking_slot_id": slot.id,
-        "parking_slot_code": slot.code,
+        "data": {
+            "id": log.id,
+            "log_id": log.id,
+            "license_plate_number": plate,
+            "vehicle_type": vtype,
+            "entry_time": log.entry_time.isoformat() if log.entry_time else None,
+            "parking_slot_id": slot.id,
+            "parking_slot_code": slot.code,
+            "parking_area_id": area.id,
+            "parking_area_name": area.name,
+        }
     }
 
 # ========================== EXIT ================================
@@ -135,11 +148,14 @@ def vehicle_exit(
         "message": f"Xe {payload.license_plate_number} đã rời bãi",
         "data": {
             "license_plate": payload.license_plate_number,
+            "vehicle_type": log.vehicle.vehicle_type if log.vehicle else None,
             "entry_time": log.entry_time,
             "exit_time": log.exit_time,
-            "hours": log.duration_hours,
+            "duration_hours": log.duration_hours,
             "amount": log.amount,
             "is_monthly_ticket": log.is_monthly_ticket,
+            "parking_area_name": log.parking_area.name if log.parking_area else None,
+            "parking_slot_code": log.parking_slot.code if log.parking_slot else None,
             "pricing_rule_id": log.pricing_rule_id,
             "morning_shifts": fee_result.get("morning_shifts"),
             "night_shifts": fee_result.get("night_shifts"),
@@ -147,13 +163,21 @@ def vehicle_exit(
     }
 
 
-# ========================== ACTIVE LOGS ================================
+
 @router.get("/logs/active", response_model=list[LogOut])
 def get_active_logs(db: Session = Depends(get_db)):
     return crud.list_active_logs(db)
 
 
-# ========================== HISTORY ================================
+@router.get("/parking-areas", response_model=List[ParkingAreaOut])
+def api_list_parking_areas_for_inout(is_active: Optional[bool] = Query(default=True), db: Session = Depends(get_db)):
+    """Return parking areas for in/out UI. This route is under `/inout` and therefore
+    uses the inout permission guard (so staff with inout access can call it).
+    """
+    return list_parking_areas(db, is_active=is_active)
+
+
+
 @router.get("/logs/history", response_model=list[LogOut])
 def get_logs_history(db: Session = Depends(get_db)):
     return crud.list_log_history(db, limit=100)
