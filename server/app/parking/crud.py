@@ -33,7 +33,7 @@ def get_parking_area(db: Session, area_id: int) -> Optional[ParkingArea]:
 
 
 
-def list_parking_areas(db, is_active=True):
+def list_parking_areas(db, is_active=None):
     q = db.query(ParkingArea)
     if is_active is not None:
         q = q.filter(ParkingArea.is_active == is_active)

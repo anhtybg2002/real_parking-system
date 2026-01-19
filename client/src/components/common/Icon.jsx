@@ -11,6 +11,7 @@ const iconsMap = {
   reports: "📈",
   settings: "⚙️",
   monthly_ticket: "🎫",
+  parking: "🅿️",
 };
 
 const Icon = ({ name }) => {

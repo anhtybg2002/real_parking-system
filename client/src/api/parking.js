@@ -10,7 +10,15 @@ import axiosClient from "./axiosClient";
 
 // Lấy danh sách bãi xe
 export const getParkingAreas = ({ includeInactive } = {}) => {
-  const params = includeInactive ? {} : { is_active: true };
+  // Nếu includeInactive = true, không gửi is_active (hoặc gửi null)
+  // Nếu includeInactive = false, gửi is_active = true
+  const params = {};
+  if (!includeInactive) {
+    params.is_active = true;
+  }
+  // Khi includeInactive = true, backend cần nhận is_active = null để lấy tất cả
+  // Nhưng FastAPI với Optional[bool] = Query(default=True) sẽ dùng default nếu không có param
+  // Nên cần gửi is_active = null hoặc không gửi param + backend phải xử lý
   return axiosClient.get("/parking/areas", { params });
 };
 

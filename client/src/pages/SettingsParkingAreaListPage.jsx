@@ -2,19 +2,21 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 import commonStyles from "../styles/commonStyles";
-import { getParkingAreas, canEditParkingMap } from "../api/parking";
+import { getParkingAreas, canEditParkingMap, toggleParkingArea } from "../api/parking";
 
 export default function SettingsParkingAreaListPage() {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [checkingEdit, setCheckingEdit] = useState({});
+  const [toggling, setToggling] = useState({});
+  const [showInactive, setShowInactive] = useState(true);
   const [q, setQ] = useState("");
   const navigate = useNavigate();
 
   const refresh = async () => {
     setLoading(true);
     try {
-      const res = await getParkingAreas({ includeInactive: true });
+      const res = await getParkingAreas({ includeInactive: showInactive });
       setAreas(res?.data || []);
     } finally {
       setLoading(false);
@@ -23,7 +25,7 @@ export default function SettingsParkingAreaListPage() {
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [showInactive]);
 
   const filtered = useMemo(() => {
     const kw = (q || "").trim().toLowerCase();
@@ -62,17 +64,54 @@ export default function SettingsParkingAreaListPage() {
     }
   };
 
+  const onToggleArea = async (area) => {
+    const willActivate = !area.is_active;
+    const action = willActivate ? "bật" : "tắt";
+    
+    // Confirm action
+    if (!window.confirm(`Bạn có chắc muốn ${action} bãi "${area.name}"?`)) {
+      return;
+    }
+
+    // Check if area has parked vehicles when deactivating
+    if (!willActivate && (area.current_count ?? 0) > 0) {
+      alert(
+        `Không thể tắt bãi "${area.name}" vì vẫn còn ${area.current_count} xe đang đỗ.\n\n` +
+        `Vui lòng đợi tất cả xe ra khỏi bãi trước khi tắt.`
+      );
+      return;
+    }
+
+    try {
+      setToggling((prev) => ({ ...prev, [area.id]: true }));
+      
+      await toggleParkingArea(area.id, willActivate);
+      
+      // Success message
+      alert(`Đã ${action} bãi "${area.name}" thành công.`);
+      
+      // Refresh list
+      await refresh();
+    } catch (error) {
+      console.error("Toggle area error:", error);
+      const msg = error?.response?.data?.detail || `Không thể ${action} bãi xe. Vui lòng thử lại.`;
+      alert(msg);
+    } finally {
+      setToggling((prev) => ({ ...prev, [area.id]: false }));
+    }
+  };
+
   return (
-    <AppLayout title="Cài đặt: Bãi đỗ">
+    <AppLayout title="Cấu hình bãi xe">
       <div style={{ padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: 13, color: "#6b7280" }}>Cài đặt / Bãi xe</div>
             <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: "#111827" }}>
-              Danh sách bãi đỗ
+              Cấu hình bãi xe
             </div>
             <div style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>
-              Chọn bãi và mở trình chỉnh sửa bản đồ.
+              Quản lý trạng thái hoạt động và chỉnh sửa bản đồ bãi xe.
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -90,6 +129,24 @@ export default function SettingsParkingAreaListPage() {
             >
               {loading ? "Đang tải..." : "Tải lại"}
             </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+              />
+              Hiển thị bãi đã tắt
+            </label>
+          </div>
+
+          <div style={{ fontSize: 13, color: "#6b7280" }}>
+            Tổng: <b>{filtered.length}</b> bãi
           </div>
         </div>
 
@@ -149,6 +206,34 @@ export default function SettingsParkingAreaListPage() {
                             disabled={!!checkingEdit[a.id]}
                           >
                             {checkingEdit[a.id] ? "Đang kiểm tra..." : "Chỉnh sửa bản đồ"}
+                          </button>
+
+                          <button
+                            type="button"
+                            style={{
+                              ...commonStyles.buttonSmall,
+                              background: active 
+                                ? "linear-gradient(135deg, #ef4444, #dc2626)" 
+                                : "linear-gradient(135deg, #10b981, #059669)",
+                              color: "#fff",
+                              border: "none",
+                              opacity: toggling[a.id] ? 0.6 : 1,
+                              cursor: toggling[a.id] ? "not-allowed" : "pointer",
+                            }}
+                            onClick={() => onToggleArea(a)}
+                            disabled={toggling[a.id]}
+                            title={
+                              active
+                                ? `Tắt bãi ${a.name} (không cho phép xe vào)`
+                                : `Bật bãi ${a.name} (cho phép xe vào)`
+                            }
+                          >
+                            {toggling[a.id] 
+                              ? "Đang xử lý..." 
+                              : active 
+                                ? "Tắt bãi" 
+                                : "Bật bãi"
+                            }
                           </button>
                         </div>
                       </td>

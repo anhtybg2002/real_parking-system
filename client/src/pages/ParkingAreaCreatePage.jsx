@@ -19,7 +19,6 @@ export default function ParkingAreaCreatePage() {
     name: "",
     map_rows: 10,
     map_cols: 12,
-    cell_size: 36,
     is_active: true,
   });
 
@@ -39,7 +38,7 @@ export default function ParkingAreaCreatePage() {
       name: String(form.name || "").trim(),
       map_rows: clampInt(form.map_rows, 3, 200, 10),
       map_cols: clampInt(form.map_cols, 3, 200, 12),
-      cell_size: clampInt(form.cell_size, 16, 120, 36),
+      cell_size: 36,
       is_active: !!form.is_active,
       map_data: { cells: {}, paths: [] },
     };
@@ -96,9 +95,9 @@ export default function ParkingAreaCreatePage() {
             />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <div>
-              <div style={labelStyle}>Rows</div>
+              <div style={labelStyle}>Rows (Số hàng)</div>
               <input
                 type="number"
                 min={3}
@@ -110,7 +109,7 @@ export default function ParkingAreaCreatePage() {
             </div>
 
             <div>
-              <div style={labelStyle}>Cols</div>
+              <div style={labelStyle}>Cols (Số cột)</div>
               <input
                 type="number"
                 min={3}
@@ -118,18 +117,6 @@ export default function ParkingAreaCreatePage() {
                 style={inputStyle}
                 value={form.map_cols}
                 onChange={(e) => setForm((p) => ({ ...p, map_cols: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <div style={labelStyle}>Cell size</div>
-              <input
-                type="number"
-                min={16}
-                max={120}
-                style={inputStyle}
-                value={form.cell_size}
-                onChange={(e) => setForm((p) => ({ ...p, cell_size: e.target.value }))}
               />
             </div>
           </div>

@@ -523,8 +523,8 @@ export default function SettingsHubPage() {
 
             <Tile
               icon="🗺️"
-              title="Chỉnh sửa bản đồ bãi"
-              desc="Chọn bãi và mở trình chỉnh sửa bản đồ."
+              title="Cấu hình bãi xe"
+              desc="Quản lý trạng thái hoạt động và chỉnh sửa bản đồ bãi xe."
               onClick={() => navigate("/dashboard/settings/parking-area")}
             />
 

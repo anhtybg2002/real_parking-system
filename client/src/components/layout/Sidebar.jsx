@@ -16,7 +16,7 @@ const Sidebar = () => {
       { label: "Vé Tháng", icon: "monthly_ticket", path: "/dashboard/monthly-ticket" },
       { label: "Cấu hình giá", icon: "pricing", path: "/dashboard/pricing" },
       { label: "Hóa đơn", icon: "invoices", path: "/dashboard/invoices" },
-      { label: "Quản lý chỗ đỗ bãi xe", icon: "", path: "/dashboard/parking-area" },
+      { label: "Quản lý chỗ đỗ xe", icon: "parking", path: "/dashboard/parking-area" },
       
       { label: "Nhân viên", icon: "staff", path: "/dashboard/staff" },
       { label: "Báo cáo", icon: "reports", path: "/dashboard/reports" },
