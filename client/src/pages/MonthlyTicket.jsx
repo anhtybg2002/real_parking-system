@@ -7,8 +7,52 @@ import axiosClient from "../api/axiosClient";
 import styles from "../styles/commonStyles";
 import { formatTime } from "../components/common/deps";
 import ExpiryReminderPanel from "../components/monthlyticket/ExpiryReminderPanel";
+import { renderTemplate } from "../api/settingsTemplates";
 
 import useVehicleTypes from "../hooks/useVehicleTypes";
+
+// Helper: Mở cửa sổ in
+const openPrintWindow = (textOrHtml) => {
+  const w = window.open("", "_blank", "width=820,height=900");
+  if (!w) {
+    alert("Trình duyệt đang chặn popup. Hãy cho phép pop-up để in.");
+    return;
+  }
+
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(String(textOrHtml || ""));
+
+  const body = looksLikeHtml
+    ? String(textOrHtml || "")
+    : `<pre style="white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;font-size:13px;line-height:1.6;margin:0;">${String(
+        textOrHtml || "—"
+      )
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")}</pre>`;
+
+  w.document.open();
+  w.document.write(`
+    <html>
+      <head>
+        <title>In hóa đơn vé tháng</title>
+        <meta charset="utf-8" />
+        <style>
+          @media print { body { margin: 0; } }
+          body { padding: 16px; color: #111827; }
+        </style>
+      </head>
+      <body>
+        ${body}
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  w.document.close();
+};
 
 // Dùng chung: trả về CHỈ ngày dd/mm/yyyy
 const formatDateVN = (value) => {
@@ -78,6 +122,47 @@ export default function MonthlyTicketsPage() {
   const [renewPlate, setRenewPlate] = useState("");
   const [renewMonths, setRenewMonths] = useState(1);
   const [monthlyPrice, setMonthlyPrice] = useState("");
+
+  // Hàm in hóa đơn vé tháng
+  const handlePrintInvoice = async (ticketData) => {
+    try {
+      const siteInfo = {
+        site_name: "Bãi Đỗ Xe ABC",
+        site_address: "123 Đường XYZ, Quận 1, TP.HCM",
+        site_phone: "0123 456 789",
+        invoice_note: "Giữ vé cẩn thận – mất vé phạt theo quy định"
+      };
+
+      const vehicleLabel = vehicleTypes.list.find(v => v.key === ticketData?.vehicle_type)?.label || ticketData?.vehicle_type || "—";
+
+      const templateData = {
+        log_type: "Vé tháng",
+        license_plate: ticketData?.license_plate_number || "—",
+        vehicle_type: vehicleLabel,
+        entry_time: ticketData?.start_date ? formatDateVN(ticketData.start_date) : "—",
+        exit_time: ticketData?.end_date ? formatDateVN(ticketData.end_date) : "—",
+        amount: ticketData?.price ? ticketData.price.toLocaleString("vi-VN") : "0",
+        customer_name: ticketData?.customer_name || "—",
+        area: ticketData?.area || "—",
+        ...siteInfo
+      };
+
+      const res = await renderTemplate("invoice_print", templateData);
+      const r = res?.data ?? res;
+      const d = r?.data?.data ?? r?.data ?? r;
+      const body = d?.body ?? d?.rendered ?? d ?? "";
+
+      if (!body) {
+        alert("Không thể tạo hóa đơn in.");
+        return;
+      }
+
+      openPrintWindow(body);
+    } catch (err) {
+      console.error("Print invoice error:", err);
+      alert(err?.response?.data?.detail || "Lỗi khi in hóa đơn.");
+    }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -316,6 +401,7 @@ export default function MonthlyTicketsPage() {
       setAlert({
         type: "entry",
         message,
+        entryData: ticket, // Lưu dữ liệu ticket để in
       });
 
       await fetchTickets();
@@ -375,7 +461,7 @@ export default function MonthlyTicketsPage() {
 
   return (
     <AppLayout title="Vé tháng">
-      <AlertMessages alert={alert} />
+      <AlertMessages alert={alert} onPrintTicket={handlePrintInvoice} />
 
 
 
