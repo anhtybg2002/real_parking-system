@@ -12,6 +12,7 @@ from .schemas import VehicleEntryIn, VehicleExitIn, LogOut, ParkingAreaOut
 from . import crud
 from app.parking.crud import list_parking_areas
 from app.permission.guards import require_page
+from .validator import validate_vietnamese_license_plate, format_license_plate
 router = APIRouter(prefix="/inout", tags=["InOut"],dependencies=[Depends(require_page("/dashboard/inout"))])
 
 
@@ -22,7 +23,12 @@ def vehicle_entry(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    plate = payload.license_plate_number.strip().upper()
+    # 0) Kiểm tra định dạng biển số xe Việt Nam
+    is_valid, error_message = validate_vietnamese_license_plate(payload.license_plate_number)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=f"Biển số xe không hợp lệ: {error_message}")
+    
+    plate = format_license_plate(payload.license_plate_number)
     vtype = payload.vehicle_type  # "car" | "motorbike"
     area_id = payload.parking_area_id
 

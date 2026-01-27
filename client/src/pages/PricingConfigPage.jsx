@@ -290,14 +290,11 @@ export default function PricingConfigPage() {
     }
   };
 
-  const isAdmin = useRole() === 'admin';
+
 
   return (
     <>
-    {!isAdmin && (
-      <div>Not Authorized</div>
-    )}
-    {isAdmin && (
+    {(
       <AppLayout title="Cấu hình giá">
       <AlertMessages alert={alert} />
 
